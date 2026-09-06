@@ -1,0 +1,31 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="Sysmon 시작",shape=ellipse,fillcolor="#dcebdc"];
+ init [label="Flask / 수신부 시작\n페이지 템플릿 · 빈 화면 데이터셋 준비\nSQLite 테이블 준비 (기존 DB 보존)"];
+ setup [label="시연 준비\n관리자 계정 사전 등록\n이벤트 0건인 시연용 DB 사용",shape=note,fillcolor="#fff2d9"];
+ wait [label="데이터 수신 대기 / 반복\n로그인 여부와 무관하게 동작"];
+ input [label="외부 입력\n감지 모듈 / AMR 모듈\n또는 시연 데이터",fillcolor="#f2f2f2"];
+ kind [label="수신 데이터 종류",shape=diamond,fillcolor="#fff2d9"];
+ video [label="영상 전달 / 최신 프레임 갱신\n웹의 해당 영상 영역에 표시"];
+ status [label="로봇 ID별 상태 저장·갱신\n배터리 · 위치 · 임무 · 마지막 수신 시각"];
+ valid [label="이벤트 필수값 유효?",shape=diamond,fillcolor="#fff2d9"];
+ reject [label="오류 기록\n잘못된 데이터 저장 제외",fillcolor="#fce9e5"];
+ duplicate [label="이미 저장한 이벤트 ID?",shape=diamond,fillcolor="#fff2d9"];
+ skip [label="중복 저장 생략"];
+ save [label="근거 이미지 저장\nSQLite events INSERT\n시간 · 로봇 · 위치 · 유형 · 측정값 · 위험 등급"];
+ ok [label="저장 성공?",shape=diamond,fillcolor="#fff2d9"];
+ failed [label="저장 실패 기록 / 오류 표시\n재시도 대기열 보관 (설계 제안)",fillcolor="#fce9e5"];
+ update [label="DB에서 최신 목록 조회 → 웹에 전달\n접속 중인 관제 화면 / 알림 갱신\n미접속이면 다음 로그인 시 저장 이력 조회",fillcolor="#eaf5ec"];
+ start -> init;setup -> init [style=dashed,label="초기 시연 조건"];
+ init -> wait;input -> wait [label="영상 / 상태 / 이벤트"];
+ wait -> kind [label="수신됨"];
+ kind -> video [label="영상"];video -> wait [label="다음 프레임"];
+ kind -> status [label="상태"];status -> update;
+ kind -> valid [label="감지 이벤트"];
+ valid -> reject [label="아니오"];reject -> wait;
+ valid -> duplicate [label="예"];duplicate -> skip [label="예"];skip -> wait;
+ duplicate -> save [label="아니오"];save -> ok;
+ ok -> failed [label="아니오"];failed -> save [label="재시도"];
+ ok -> update [label="예"];update -> wait [label="계속 수신"];
+
+}

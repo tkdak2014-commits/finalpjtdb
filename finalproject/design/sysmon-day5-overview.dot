@@ -1,0 +1,24 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ detection [label="감지 모듈 / 카메라\n영상 · 이상 감지 결과",fillcolor="#f2f2f2"];
+ amr [label="AMR 모듈 / 로봇 1·2\n영상 · 배터리 · 위치 · 임무 상태",fillcolor="#f2f2f2"];
+ rx [label="Sysmon 수신부\n로봇 ID로 데이터 구분"];
+ process [label="Flask 서버 / 데이터 처리\n검증 · 중복 확인 · 저장"];
+ stream [label="영상 / 최신 상태 전달\n연결 끊김 표시"];
+ db [label="SQLite DB\nusers / robot_status / events",shape=cylinder,fillcolor="#fff2d9"];
+ auth [label="로그인 / 세션 인증\n관리자 계정 확인"];
+ camera [label="Camera 페이지\n영상 2개 · 로봇별 상태 · 최근 알림",fillcolor="#eaf5ec"];
+ report [label="DB 페이지\n조건 검색 · 이벤트 목록 · 근거 이미지",fillcolor="#eaf5ec"];
+ detection -> rx [label="영상 / 이벤트"];
+ amr -> rx [label="영상 / 상태"];
+ rx -> stream [label="영상 / 최신 상태"];
+ rx -> process [label="상태 / 이벤트"];
+ process -> db [label="저장"];
+ db -> auth [label="계정 조회"];
+ auth -> camera [label="인증 성공"];
+ stream -> camera [label="화면 갱신"];
+ db -> report [label="서버를 통한 조회"];
+ camera -> report [label="DB 탭 / 이벤트 선택"];
+ report -> camera [label="Camera 탭"];
+
+}

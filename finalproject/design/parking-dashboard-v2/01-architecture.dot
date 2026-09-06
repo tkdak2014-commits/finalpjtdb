@@ -1,0 +1,24 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ browser [label="웹 대시보드 / 관리자·운영자·조회자\n지도 · 상태 · 영상 · 이벤트 · 명령 · 이력",fillcolor="#eaf5ec"];
+ routes [label="Flask routes / 인증·권한 검사\nauth · dashboard · robots · maps\nevents · commands · history"];
+ services [label="services / 업무 규칙\n이벤트 전이 · 명령 요청 · 순찰·교대 기록"];
+ repository [label="repositories / DB 접근\n트랜잭션 · 검색 · 중복·순서 검증"];
+ db [label="SQLite\n사용자·권한 / 로봇·상태 / 지도\n이벤트·변경 이력 / 명령·상태 이력\n순찰·관측점 방문 / 교대 이력",shape=cylinder,fillcolor="#fff2d9"];
+ media [label="증거 이미지 파일 저장소\nDB에는 경로와 메타데이터",shape=folder,fillcolor="#fff2d9"];
+ adapter [label="연동 어댑터 / 공통 내부 데이터 형식\n현재: Mock + 임시 HTTP\n추후: ros_adapter.py"];
+ ext [label="감지 / 로봇·미션 관리 모듈\n상태·이벤트 전송 / 명령 수락·실행·결과 판단",fillcolor="#eeeeee"];
+ camera [label="camera_service\nAMR1·AMR2 / 고정 웹캠 1·2\n영상 중계 · 소스별 연결 상태"];
+ browser -> routes [label="조회 / 요청"];
+ routes -> services;
+ services -> repository;
+ repository -> db;
+ services -> media [label="증거 저장·조회"];
+ services -> adapter [label="저장된 명령 요청 전송"];
+ adapter -> services [label="정규화된 상태·결과 수신"];
+ adapter -> ext [label="요청 ID + 명령"];
+ ext -> adapter [label="수락 / 진행 / 완료 / 실패"];
+ ext -> camera [label="영상 스트림"];
+ camera -> browser [label="인증 후 영상 표시"];
+
+}

@@ -1,0 +1,28 @@
+digraph G {
+      graph [rankdir=LR, bgcolor="white", pad="0.45", nodesep="0.55", ranksep="0.7", splines=ortho];
+      node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=17, margin="0.22,0.16"];
+      edge [color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=14, arrowsize=0.8];
+    
+ wait [label="상태·영상 데이터 수신 대기",fillcolor="#e7f3e9"];
+ kind [label="수신 종류 확인",shape=diamond,fillcolor="#fff2d9"];
+ status [label="상태 메시지 수신\nrobot_id·배터리·좌표·임무·시각"];
+ video [label="영상 프레임 수신\nAMR1·AMR2·웹캠1·웹캠2"];
+ valid [label="ID·시각·순서 유효?",shape=diamond,fillcolor="#fff2d9"];
+ stale [label="오류·중복·오래된 값 기록\n화면 갱신 제외",fillcolor="#fce9e5"];
+ save [label="robot_latest_status 갱신\n상태 이력 저장"];
+ coord [label="지도 좌표계·버전 일치?",shape=diamond,fillcolor="#fff2d9"];
+ mark [label="지도에 로봇 위치 표시"];
+ unknown [label="위치 미확정 표시",fillcolor="#fce9e5"];
+ card [label="배터리·임무·마지막 수신 시각\n연결 상태 카드 갱신"];
+ stream [label="해당 영상 연결 성공?",shape=diamond,fillcolor="#fff2d9"];
+ show [label="해당 영상 영역에\n최신 프레임 표시"];
+ waiting [label="해당 영상만\n연결 대기·단절 표시",fillcolor="#fce9e5"];
+ refresh [label="대시보드 갱신",fillcolor="#e7f3e9"];
+ wait -> kind;kind -> status [label="상태"];kind -> video [label="영상"];
+ status -> valid;valid -> stale [label="아니오"];valid -> save [label="예"];
+ save -> coord;coord -> mark [label="예"];coord -> unknown [label="아니오"];
+ mark -> card;unknown -> card;card -> refresh;stale -> wait;
+ video -> stream;stream -> show [label="예"];stream -> waiting [label="아니오"];show -> refresh;waiting -> refresh;
+ refresh -> wait [label="다음 데이터"];
+
+}

@@ -1,0 +1,18 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ rx [label="미션 모듈의 수행 기록 수신\n샘플 시연도 같은 내부 형식",shape=ellipse,fillcolor="#eaf5ec"];
+ type [label="기록 종류",shape=diamond,fillcolor="#fff2d9"];
+ patrol [label="순찰 ID로 시작·진행·종료 갱신\n로봇 / 경로 버전 / 시작·종료 시각\n결과 / 연관 명령 ID (없을 수 있음)"];
+ visit [label="관측점 방문 기록\n순찰 ID / P1~P7 / 방문 시각·결과\n재방문과 중복 메시지 구분"];
+ handover [label="교대 ID로 교대 기록\n인계 로봇 → 인수 로봇 / 사유\n인계 전·후 순찰 ID / 시각·결과"];
+ db [label="SQLite 이력 저장\n순찰 / 방문 / 교대",shape=cylinder,fillcolor="#fff2d9"];
+ user [label="관리자 이력 검색\n사건 / 명령 / 순찰 / 교대 선택\n기간·로봇·유형·상태 필터"];
+ result [label="검색 결과 존재?",shape=diamond,fillcolor="#fff2d9"];
+ empty [label="검색 결과 없음 표시"];
+ detail [label="목록 → 상세 / 시간순 변경 이력\n관련 사건·명령·순찰·교대 연결 확인",fillcolor="#eaf5ec"];
+ rx -> type;type -> patrol [label="순찰"];type -> visit [label="방문"];type -> handover [label="교대"];
+ patrol -> db;visit -> db;handover -> db;
+ db -> result [label="서버 조회"];user -> result [label="검색 요청"];
+ result -> empty [label="아니오"];result -> detail [label="예"];
+
+}

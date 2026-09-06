@@ -1,0 +1,32 @@
+digraph G { graph [rankdir=LR, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="시작",shape=ellipse,fillcolor="#e7f3e9"];
+ setup [label="Flask 서버 / SQLite / 수신부 준비\n페이지 구성 · 빈 화면 데이터셋 생성\n시연 DB: 계정·지도 등록, 이벤트 0건"];
+ login [label="로그인 화면 표시\n아이디 / 비밀번호 입력"];
+ auth [label="로그인 성공?",shape=diamond,fillcolor="#fff2d9"];
+ err [label="오류 표시 / 재입력",fillcolor="#fce9e5"];
+ dash [label="대시보드 표시\nAMR1·AMR2 상태 / 지도·7관측점 / 영상\n이벤트 없으면 빈 로그 표시",fillcolor="#e7f3e9"];
+ receive [label="백그라운드 데이터 수신\n샘플 HTTP → 추후 ROS 연동\n로그인 여부와 무관하게 계속 수신"];
+ state [label="로봇 상태·위치 / 영상 갱신\n연결 끊김은 소스별로 표시"];
+ event [label="화재 이벤트 + 로봇1 증거 이미지 수신\n검증 → 이미지 파일·DB 저장\n상세 흐름: 02 탭"];
+ log [label="이벤트 로그 갱신\n발생 시각 / 종류 / 발생 좌표\n위험도 상·중·하 / 로봇1 이미지 1장",fillcolor="#e7f3e9"];
+ action [label="사용자 선택",shape=diamond,fillcolor="#fff2d9"];
+ detail [label="이벤트 상세 / 이미지 확대\n처리 상태 변경·메모 기록\n03·04 탭"];
+ commands [label="운영 명령 요청 / 결과 확인\n05 탭"];
+ history [label="사건·명령·순찰·교대 이력 검색\n06 탭"];
+ end [label="로그아웃\n사용자 세션만 종료",shape=ellipse,fillcolor="#e7f3e9"];
+ start -> setup;
+ setup -> login [label="사용자 화면"];
+ setup -> receive [label="독립 수신 작업"];
+ login -> auth;auth -> err [label="아니오"];err -> login;
+ auth -> dash [label="예"];
+ receive -> state [label="상태 / 영상"];state -> dash [label="최신값 반영"];
+ receive -> event [label="감지 이벤트"];event -> log [label="저장 성공 후"];
+ dash -> log [label="DB 조회 / 빈 목록 또는 저장 이력"];
+ log -> action;
+ action -> detail [label="사건 / 이미지"];
+ action -> commands [label="로봇 관리"];
+ action -> history [label="이력"];
+ action -> end [label="로그아웃"];
+
+}

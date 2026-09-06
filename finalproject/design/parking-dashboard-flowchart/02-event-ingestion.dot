@@ -1,0 +1,28 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="화재 이벤트 수신",shape=ellipse,fillcolor="#e7f3e9"];
+ payload [label="이벤트 ID / 발생 시각 / 종류 / 발생 좌표\n위험도: 상·중·하\n동일 이벤트에 연결된 로봇1 증거 이미지 1장"];
+ idcheck [label="ID·출처·메시지 형식 유효?",shape=diamond,fillcolor="#fff2d9"];
+ bad [label="오류 기록 / 보완 요청\n유효한 이벤트처럼 표시하지 않음",fillcolor="#fce9e5"];
+ duplicate [label="이미 처리한 메시지?",shape=diamond,fillcolor="#fff2d9"];
+ skip [label="중복 행 생성 생략\n다음 메시지 대기"];
+ enrich [label="좌표·위험도·증거 수신 여부 확인\n좌표: 이벤트 위치 / 지도 좌표계 확인\n이미지: event_id 일치 확인"];
+ complete [label="필수 표시 정보가 모두 있는가?",shape=diamond,fillcolor="#fff2d9"];
+ partial [label="받은 증거 이미지는 파일 저장\n누락만 표시: 좌표 미확정 / 등급 미수신 / 이미지 대기\n일부 누락만으로 화재 기록을 버리지 않음",fillcolor="#fce9e5"];
+ full [label="증거 이미지 파일 저장\n기존 실시간 영상과 별개로 보존"];
+ db [label="SQLite 이벤트 저장 / 보완 갱신\n시각·종류·좌표·위험도·로봇 ID·이미지 경로\n새 이벤트 처리 상태: 신규"];
+ ok [label="저장 성공?",shape=diamond,fillcolor="#fff2d9"];
+ fail [label="실패 기록 / 재처리 대상으로 보관\n저장 완료로 표시하지 않음",fillcolor="#fce9e5"];
+ api [label="Flask API로 최신 DB 내용 조회"];
+ log [label="웹 이벤트 로그에 한 행 표시\n14:32 | 화재 발생 | (12.4, 8.1) | 상 | 사진 1장\n시연 예시 / 누락 정보는 대기 표시",fillcolor="#e7f3e9"];
+ wait [label="다음 수신 / 누락 정보 보완 대기",shape=ellipse,fillcolor="#e7f3e9"];
+ start -> payload -> idcheck;
+ idcheck -> bad [label="아니오"];idcheck -> duplicate [label="예"];
+ duplicate -> skip [label="예"];duplicate -> enrich [label="아니오"];
+ enrich -> complete;complete -> full [label="예"];complete -> partial [label="아니오"];
+ full -> db;partial -> db [label="가능한 정보 우선 보존"];
+ db -> ok;ok -> fail [label="아니오"];ok -> api [label="예"];
+ api -> log -> wait;
+ bad -> wait;skip -> wait;fail -> wait;
+
+}

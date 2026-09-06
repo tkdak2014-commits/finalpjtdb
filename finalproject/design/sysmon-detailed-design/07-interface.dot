@@ -1,0 +1,23 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="연동 데이터 형식 협의 시작",shape=ellipse,fillcolor="#e7f3e9"];
+ contract [label="공통 내부 데이터 계약 작성\n상태·이벤트·명령 결과·순찰·교대\nID / 발생·수신 시각 / 지도·좌표계"];
+ event [label="화재 이벤트 계약\nevent_id / message_id / occurred_at\nx,y / map_id / 위험도 상·중·하\n로봇1 증거 이미지 1장과 연결 ID"];
+ mission [label="미션 계약\nrequest_id / robot_id / 실행 상태·사유\npatrol_id / visit_id / handover_id"];
+ agree [label="필드·의미·생성 주체 합의?",shape=diamond,fillcolor="#fff2d9"];
+ draft [label="미결정 항목·담당자 기록\n필드 정의 수정 후 다시 협의",fillcolor="#fce9e5"];
+ sample [label="샘플 JSON·이미지 준비\n임시 HTTP / Mock 어댑터로 입력"];
+ service [label="동일 서비스 함수에서 검증·저장\nDB·UI API·화면 연동 확인"];
+ ros [label="ROS 토픽·메시지 확정?",shape=diamond,fillcolor="#fff2d9"];
+ mock [label="샘플 기반 기능 개발·검증 계속\n실연동 완료와 구분해 기록"];
+ adapter [label="ros_adapter에서 원본 → 내부 형식 변환\n수신: 상태·이벤트·결과 / 송신: 명령 요청"];
+ verify [label="실제 데이터·샘플 결과 일치 검증\n좌표·사진 매칭 / 중복·역순 / 결과 상태"];
+ end [label="인터페이스 버전·샘플·검증 결과 기록",shape=ellipse,fillcolor="#e7f3e9"];
+ start -> contract;contract -> event;contract -> mission;
+ event -> agree;mission -> agree;
+ agree -> draft [label="아니오"];draft -> contract;
+ agree -> sample [label="예"];sample -> service -> ros;
+ ros -> mock [label="아니오"];ros -> adapter [label="예"];
+ adapter -> verify -> end;mock -> end [label="샘플 검증 결과"];
+
+}

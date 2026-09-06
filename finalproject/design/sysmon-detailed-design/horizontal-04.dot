@@ -1,0 +1,23 @@
+digraph G { graph [rankdir=LR, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ new [label="신규\n화재 이벤트 저장 시 생성",shape=ellipse,fillcolor="#fce9e5"];
+ request1 [label="담당자가 확인 시작 요청"];
+ check1 [label="권한·현재 상태·버전 유효?",shape=diamond,fillcolor="#fff2d9"];
+ reviewing [label="확인중\n상태 + 변경 이력 저장",fillcolor="#fff2d9"];
+ request2 [label="담당자가 작업요청 등록\n조치 요청 내용 입력"];
+ check2 [label="권한·현재 상태·버전 유효?",shape=diamond,fillcolor="#fff2d9"];
+ requested [label="작업요청\n상태 + 변경 이력 저장",fillcolor="#fff2d9"];
+ request3 [label="담당자가 조치 결과 입력\n조치완료 요청"];
+ check3 [label="권한·현재 상태·버전 유효?",shape=diamond,fillcolor="#fff2d9"];
+ completed [label="조치완료\n상태 + 변경 이력 저장",shape=ellipse,fillcolor="#e7f3e9"];
+ reject [label="요청 거부 / 이유 표시\n현재 상태 유지 · 최신 상태 재조회",fillcolor="#fce9e5"];
+ note [label="매 변경마다 담당자·시각·이전/새 상태·메모 기록\n작업요청은 시설 조치 기록이며 로봇 명령과 별개\n각 저장 성공 후 상세 UI 갱신",shape=note,fillcolor="#edf3f8"];
+ new -> request1 -> check1;
+ check1 -> reviewing [label="예"];check1 -> reject [label="아니오"];
+ reviewing -> request2 -> check2;
+ check2 -> requested [label="예"];check2 -> reject [label="아니오"];
+ requested -> request3 -> check3;
+ check3 -> completed [label="예"];check3 -> reject [label="아니오"];
+ note -> requested [style=dashed];
+
+}

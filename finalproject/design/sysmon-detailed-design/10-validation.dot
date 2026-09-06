@@ -1,0 +1,20 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="① 연동 데이터 형식 확정\n상태·화재 좌표·위험도·사진\n명령 결과·순찰·교대 데이터 합의",shape=ellipse,fillcolor="#fff2d9"];
+ build [label="② 데이터 저장·웹 표시 구현\n빈 DB → 샘플 입력 → 저장 → 로그 표시\n상세 처리·명령·이력 API 연결"];
+ test [label="샘플 기반 검증 통과?",shape=diamond,fillcolor="#fff2d9"];
+ fix [label="실패 기능 수정 후 재검증",fillcolor="#fce9e5"];
+ live [label="실제 모듈·ROS 연동 준비?",shape=diamond,fillcolor="#fff2d9"];
+ blocked [label="샘플 검증 완료 상태로 기록\n연동 담당·미확정 사항·확인 일정 관리"];
+ real [label="③ 실제 환경 통합 검증\n로그인·권한 / 영상·상태·지도\n사건·사진 매칭 / 명령 결과 / 순찰·교대"];
+ result [label="시나리오별 실제 결과 일치?",shape=diamond,fillcolor="#fff2d9"];
+ repair [label="연동 오류 수정 / 담당 모듈과 재검증",fillcolor="#fce9e5"];
+ movie [label="동작 영상 촬영·DB 증거 확보\n설계도·API 계약·검증 결과 정리"];
+ end [label="구현·통합 검증 산출물 완료",shape=ellipse,fillcolor="#e7f3e9"];
+ start -> build -> test;
+ test -> fix [label="아니오"];fix -> build;
+ test -> live [label="예"];live -> blocked [label="아니오"];live -> real [label="예"];
+ real -> result;result -> repair [label="아니오"];repair -> real;
+ result -> movie [label="예"];movie -> end;
+
+}

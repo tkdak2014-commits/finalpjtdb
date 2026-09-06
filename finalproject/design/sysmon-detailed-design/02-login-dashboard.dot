@@ -1,0 +1,21 @@
+digraph G {
+      graph [rankdir=LR, bgcolor="white", pad="0.45", nodesep="0.55", ranksep="0.7", splines=ortho];
+      node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=17, margin="0.22,0.16"];
+      edge [color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=14, arrowsize=0.8];
+    
+ login [label="로그인 페이지 표시",fillcolor="#e7f3e9"];
+ input [label="아이디·비밀번호 입력"];
+ request [label="로그인 요청 전송"];
+ users [label="users 테이블에서\n사용자 계정 조회"];
+ valid [label="계정·비밀번호 유효?",shape=diamond,fillcolor="#fff2d9"];
+ error [label="로그인 오류 메시지 표시",fillcolor="#fce9e5"];
+ session [label="세션 생성\n사용자 역할 저장"];
+ permission [label="대시보드 조회 권한 확인"];
+ loadmap [label="지도·경로·P1~P7\n안전구역·도크 조회"];
+ loadrobot [label="AMR1·AMR2 최신 상태 조회"];
+ loadevents [label="최근 이벤트 로그 조회"];
+ dashboard [label="대시보드 표시\n이벤트 0건이면 빈 로그 표시",fillcolor="#e7f3e9"];
+ login -> input -> request -> users -> valid;valid -> error [label="아니오"];error -> login;
+ valid -> session [label="예"];session -> permission -> loadmap -> loadrobot -> loadevents -> dashboard;
+
+}

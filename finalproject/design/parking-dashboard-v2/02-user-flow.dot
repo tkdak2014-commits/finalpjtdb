@@ -1,0 +1,22 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="Sysmon 시작",shape=ellipse,fillcolor="#eaf5ec"];
+ init [label="Flask / DB 스키마 / 어댑터 준비\n페이지 구성 · 빈 화면 데이터셋 준비\n시연: 계정·지도·관측점 7개 등록 / 이벤트 0건"];
+ receive [label="백그라운드 수신 시작\n로그인과 무관하게 계속 동작\n03 데이터 수신 흐름 참조",fillcolor="#eeeeee"];
+ login [label="로그인 화면 → 계정 입력"];
+ auth [label="인증 성공?",shape=diamond,fillcolor="#fff2d9"];
+ err [label="오류 표시 / 재입력",fillcolor="#fce9e5"];
+ ui [label="권한에 맞는 대시보드 표시\n지도·7관측점 / AMR1·2 상태 / 영상 4개\n이벤트 0건 → 빈 목록 표시"];
+ action [label="사용자 선택",shape=diamond,fillcolor="#fff2d9"];
+ detail [label="이벤트 상세 / 상태 변경\n04 이벤트 처리 흐름 참조"];
+ command [label="운영 명령 요청 / 진행 조회\n05 명령 요청 흐름 참조"];
+ history [label="사건·명령·순찰·교대 이력 검색\n06 순찰·교대 흐름 참조"];
+ logout [label="로그아웃 / 세션 종료",shape=ellipse,fillcolor="#eaf5ec"];
+ start -> init;init -> receive;init -> login;
+ login -> auth;auth -> err [label="아니오"];err -> login;
+ auth -> ui [label="예"];ui -> action;
+ action -> detail [label="이벤트"];action -> command [label="명령"];
+ action -> history [label="이력"];action -> logout [label="로그아웃"];
+ detail -> ui [label="복귀"];command -> ui [label="복귀"];history -> ui [label="복귀"];
+
+}

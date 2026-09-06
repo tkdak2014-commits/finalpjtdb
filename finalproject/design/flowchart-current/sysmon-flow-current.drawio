@@ -1,0 +1,936 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" type="device">
+  <diagram name="Sysmon 기능 플로우 (현재 구현)" id="sysmon-current">
+    <mxGraphModel grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2900" pageHeight="2300" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="n1" parent="1" vertex="1" value="시작" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="370.0" y="150" width="150" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n2" parent="1" vertex="1" value="Flask 서버 실행&#10;create_app()" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="226" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n3" parent="1" vertex="1" value="저장 폴더 준비&#10;instance / evidence / maps / live_frames" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="316" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n4" parent="1" vertex="1" value="SQLite DB 연결 (잠금 대기 5초)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="406" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n5" parent="1" vertex="1" value="DB 연결 성공?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="496" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n6" parent="1" vertex="1" value="외래 키 활성화 · WAL 설정&#10;PRAGMA foreign_keys = ON" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="606" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n7" parent="1" vertex="1" value="필수 테이블 13개 생성&#10;CREATE TABLE IF NOT EXISTS&#10;(없는 것만 생성 · 기존 데이터 보존)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="696" width="290" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="n8" parent="1" vertex="1" value="조회 인덱스 생성" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="800" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n9" parent="1" vertex="1" value="초기 관리자 계정 확인&#10;has_active_admin()" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="890" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n10" parent="1" vertex="1" value="장치 토큰 확인&#10;SYSMON_ROBOT_API_KEY" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="980" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n11" parent="1" vertex="1" value="수신 API 4개 등록&#10;robots · maps · events · cameras" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300.0" y="1070" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="e12" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="194" as="sourcePoint" />
+            <mxPoint x="445.0" y="226" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="284" as="sourcePoint" />
+            <mxPoint x="445.0" y="316" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e14" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="374" as="sourcePoint" />
+            <mxPoint x="445.0" y="406" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e15" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="464" as="sourcePoint" />
+            <mxPoint x="445.0" y="496" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e16" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="574" as="sourcePoint" />
+            <mxPoint x="445.0" y="606" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e17" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="664" as="sourcePoint" />
+            <mxPoint x="445.0" y="696" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e18" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="768" as="sourcePoint" />
+            <mxPoint x="445.0" y="800" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e19" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="858" as="sourcePoint" />
+            <mxPoint x="445.0" y="890" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e20" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="948" as="sourcePoint" />
+            <mxPoint x="445.0" y="980" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e21" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="445.0" y="1038" as="sourcePoint" />
+            <mxPoint x="445.0" y="1070" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n22" parent="1" vertex="1" value="DB 연결 오류 기록&#10;서버 시작 중단" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="30" y="500" width="230" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="e23" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="300.0" y="535.0" as="sourcePoint" />
+            <mxPoint x="260" y="535.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n24" parent="1" vertex="1" value="users · robots · robot_latest_status · robot_status_history · maps · map_latest · events · event_evidence · event_changes · commands · patrol_runs · patrol_visits · handovers" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="300" y="1168" width="290" height="96" as="geometry" />
+        </mxCell>
+        <mxCell id="n25" parent="1" vertex="1" value="로그인 페이지 표시&#10;GET /login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="150" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n26" parent="1" vertex="1" value="아이디·비밀번호 입력&#10;POST /login" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="240" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n27" parent="1" vertex="1" value="users 테이블 계정 조회" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="330" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n28" parent="1" vertex="1" value="비밀번호 해시 일치 ·&#10;활성 계정인가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="420" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n29" parent="1" vertex="1" value="사용자 세션 생성 (8시간)&#10;CSRF 토큰 발급" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="530" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n30" parent="1" vertex="1" value="권한 확인&#10;ADMIN · OPERATOR · VIEWER" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="620" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n31" parent="1" vertex="1" value="초기 데이터 4종 조회&#10;AMR 최신 상태 · 최신 지도 ·&#10;최근 이벤트 50건 · 카메라 4개 상태" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="710" width="290" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="n32" parent="1" vertex="1" value="이벤트가 존재하는가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="814" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n33" parent="1" vertex="1" value="이벤트 로그 표 렌더링" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="924" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n34" parent="1" vertex="1" value="대시보드 표시" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="660.0" y="1014" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n35" parent="1" vertex="1" value="A" style="ellipse;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=15;fontColor=#000000;align=center;verticalAlign=middle;fontStyle=1;">
+          <mxGeometry x="775.0" y="1104" width="60" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="e36" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="208" as="sourcePoint" />
+            <mxPoint x="805.0" y="240" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e37" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="298" as="sourcePoint" />
+            <mxPoint x="805.0" y="330" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e38" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="388" as="sourcePoint" />
+            <mxPoint x="805.0" y="420" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e39" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="498" as="sourcePoint" />
+            <mxPoint x="805.0" y="530" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e40" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="588" as="sourcePoint" />
+            <mxPoint x="805.0" y="620" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e41" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="678" as="sourcePoint" />
+            <mxPoint x="805.0" y="710" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e42" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="782" as="sourcePoint" />
+            <mxPoint x="805.0" y="814" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e43" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="892" as="sourcePoint" />
+            <mxPoint x="805.0" y="924" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e44" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="982" as="sourcePoint" />
+            <mxPoint x="805.0" y="1014" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e45" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="805.0" y="1072" as="sourcePoint" />
+            <mxPoint x="805.0" y="1104" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n46" parent="1" vertex="1" value="로그인 실패 401 · 같은 화면에 안내&#10;비밀번호는 다시 표시하지 않음 → 재입력" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="660" y="1188" width="290" height="66" as="geometry" />
+        </mxCell>
+        <mxCell id="e47" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="950.0" y="459.0" as="sourcePoint" />
+            <mxPoint x="950" y="1221.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1030" y="459.0" />
+              <mxPoint x="1030" y="1221.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e48" parent="1" edge="1" value="아니오 · 빈 로그 안내" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="950.0" y="853.0" as="sourcePoint" />
+            <mxPoint x="950.0" y="1043.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="975" y="853.0" />
+              <mxPoint x="975" y="1043.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n49" parent="1" vertex="1" value="A = 데이터 수신 대기.&#10;로그아웃 상태에서도 서버 수신·저장은 계속된다." style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="660" y="1284" width="290" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="n50" parent="1" vertex="1" value="A" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=15;fontColor=#000000;align=center;verticalAlign=middle;fontStyle=1;">
+          <mxGeometry x="1060" y="110" width="60" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n51" parent="1" vertex="1" value="새 데이터 수신" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1160" y="104" width="200" height="56" as="geometry" />
+        </mxCell>
+        <mxCell id="n52" parent="1" vertex="1" value="장치 토큰&#10;X-Robot-Token 유효?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1400" y="92" width="230" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n53" parent="1" vertex="1" value="수신 데이터 종류는?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1680" y="92" width="230" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="e54" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1120" y="132" as="sourcePoint" />
+            <mxPoint x="1160" y="132" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e55" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1360" y="132" as="sourcePoint" />
+            <mxPoint x="1400" y="132" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e56" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1630" y="132" as="sourcePoint" />
+            <mxPoint x="1680" y="132" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n57" parent="1" vertex="1" value="401 거부 · 기록 후 A" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="1415" y="206" width="200" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="e58" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1515.0" y="170" as="sourcePoint" />
+            <mxPoint x="1515.0" y="206" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e59" parent="1" edge="1" value="로봇 상태" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1795.0" y="170" as="sourcePoint" />
+            <mxPoint x="1205.0" y="360" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1795.0" y="314" />
+              <mxPoint x="1205.0" y="314" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e60" parent="1" edge="1" value="지도" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1795.0" y="170" as="sourcePoint" />
+            <mxPoint x="1645.0" y="360" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1795.0" y="314" />
+              <mxPoint x="1645.0" y="314" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e61" parent="1" edge="1" value="영상" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1795.0" y="170" as="sourcePoint" />
+            <mxPoint x="2085.0" y="360" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1795.0" y="314" />
+              <mxPoint x="2085.0" y="314" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e62" parent="1" edge="1" value="화재 이벤트" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1795.0" y="170" as="sourcePoint" />
+            <mxPoint x="2525.0" y="360" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1795.0" y="314" />
+              <mxPoint x="2525.0" y="314" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n63" parent="1" vertex="1" value="POST /api/robots/status (JSON)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="360" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n64" parent="1" vertex="1" value="robot_id · 배터리 · 좌표 ·&#10;임무 상태 · observed_at 확인" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="450" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n65" parent="1" vertex="1" value="형식·범위가 유효한가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="540" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n66" parent="1" vertex="1" value="이미 받은 message_id인가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="650" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n67" parent="1" vertex="1" value="observed_at이&#10;저장값보다 최신인가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="760" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n68" parent="1" vertex="1" value="BEGIN IMMEDIATE&#10;robot_status_history INSERT&#10;robot_latest_status UPSERT&#10;COMMIT (실패 시 ROLLBACK)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.06;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="870" width="290" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="n69" parent="1" vertex="1" value="GET /api/robots/status&#10;2초 폴링" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="984" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n70" parent="1" vertex="1" value="배터리·임무·연결 상태 표시&#10;(15초 무수신 → OFFLINE)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060.0" y="1074" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n71" parent="1" vertex="1" value="A" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=15;fontColor=#000000;align=center;verticalAlign=middle;fontStyle=1;">
+          <mxGeometry x="1175.0" y="1164" width="60" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="e72" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="418" as="sourcePoint" />
+            <mxPoint x="1205.0" y="450" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e73" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="508" as="sourcePoint" />
+            <mxPoint x="1205.0" y="540" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e74" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="618" as="sourcePoint" />
+            <mxPoint x="1205.0" y="650" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e75" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="728" as="sourcePoint" />
+            <mxPoint x="1205.0" y="760" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e76" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="838" as="sourcePoint" />
+            <mxPoint x="1205.0" y="870" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e77" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="952" as="sourcePoint" />
+            <mxPoint x="1205.0" y="984" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e78" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="1042" as="sourcePoint" />
+            <mxPoint x="1205.0" y="1074" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e79" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1205.0" y="1132" as="sourcePoint" />
+            <mxPoint x="1205.0" y="1164" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n80" parent="1" vertex="1" value="거부·중복 기록 후 A&#10;형식 400 · 내용 다른 중복 409&#10;오래된 상태 409 · 같은 내용 재전송 200" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060" y="1248" width="290" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="e81" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1350.0" y="579.0" as="sourcePoint" />
+            <mxPoint x="1350" y="1286.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1396" y="579.0" />
+              <mxPoint x="1396" y="1286.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e82" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1350.0" y="689.0" as="sourcePoint" />
+            <mxPoint x="1350" y="1286.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1396" y="689.0" />
+              <mxPoint x="1396" y="1286.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e83" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1350.0" y="799.0" as="sourcePoint" />
+            <mxPoint x="1350" y="1286.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1396" y="799.0" />
+              <mxPoint x="1396" y="1286.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n84" parent="1" vertex="1" value="POST /api/maps&#10;(OccupancyGrid 내부 형식)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1500.0" y="360" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n85" parent="1" vertex="1" value="resolution · width · height ·&#10;origin · frame_id 확인" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1500.0" y="450" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n86" parent="1" vertex="1" value="형식·크기가 유효한가?&#10;(최대 100만 셀)" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#ffe6cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1500.0" y="540" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n87" parent="1" vertex="1" value="점유 격자 → PNG 변환&#10;지도 이미지 파일 저장" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1500.0" y="650" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n88" parent="1" vertex="1" value="maps INSERT +&#10;map_latest 갱신 (한 트랜잭션)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.06;fillColor=#ffe6cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1500.0" y="740" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n89" parent="1" vertex="1" value="지도 이미지 · 로봇 위치 ·&#10;최근 이동 경로 표시" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1500.0" y="830" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n90" parent="1" vertex="1" value="A" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=15;fontColor=#000000;align=center;verticalAlign=middle;fontStyle=1;">
+          <mxGeometry x="1615.0" y="920" width="60" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="e91" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1645.0" y="418" as="sourcePoint" />
+            <mxPoint x="1645.0" y="450" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e92" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1645.0" y="508" as="sourcePoint" />
+            <mxPoint x="1645.0" y="540" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e93" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1645.0" y="618" as="sourcePoint" />
+            <mxPoint x="1645.0" y="650" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e94" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1645.0" y="708" as="sourcePoint" />
+            <mxPoint x="1645.0" y="740" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e95" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1645.0" y="798" as="sourcePoint" />
+            <mxPoint x="1645.0" y="830" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e96" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1645.0" y="888" as="sourcePoint" />
+            <mxPoint x="1645.0" y="920" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n97" parent="1" vertex="1" value="거부 기록 후 A&#10;형식 400 · 같은 지도 재수신 200&#10;저장 실패 500" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="1500" y="1004" width="290" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="e98" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1790.0" y="579.0" as="sourcePoint" />
+            <mxPoint x="1790" y="1042.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="1836" y="579.0" />
+              <mxPoint x="1836" y="1042.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n99" parent="1" vertex="1" value="POST /api/cameras/{id}/frame" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940.0" y="360" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n100" parent="1" vertex="1" value="camera_id 확인&#10;AMR1 · AMR2 · 고정 웹캠 1 · 2" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940.0" y="450" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n101" parent="1" vertex="1" value="PNG·JPEG이고&#10;2MB 이하인가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940.0" y="540" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n102" parent="1" vertex="1" value="captured_at이 최신인가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940.0" y="650" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n103" parent="1" vertex="1" value="최신 프레임 파일 원자적 교체&#10;(누적 저장하지 않음)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940.0" y="760" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n104" parent="1" vertex="1" value="카메라 상태 판정 (5초 기준)&#10;LIVE / 연결 끊김 / 수신 대기" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940.0" y="850" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n105" parent="1" vertex="1" value="해당 영상 영역만 갱신" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940.0" y="940" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n106" parent="1" vertex="1" value="A" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=15;fontColor=#000000;align=center;verticalAlign=middle;fontStyle=1;">
+          <mxGeometry x="2055.0" y="1030" width="60" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="e107" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2085.0" y="418" as="sourcePoint" />
+            <mxPoint x="2085.0" y="450" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e108" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2085.0" y="508" as="sourcePoint" />
+            <mxPoint x="2085.0" y="540" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e109" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2085.0" y="618" as="sourcePoint" />
+            <mxPoint x="2085.0" y="650" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e110" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2085.0" y="728" as="sourcePoint" />
+            <mxPoint x="2085.0" y="760" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e111" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2085.0" y="818" as="sourcePoint" />
+            <mxPoint x="2085.0" y="850" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e112" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2085.0" y="908" as="sourcePoint" />
+            <mxPoint x="2085.0" y="940" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e113" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2085.0" y="998" as="sourcePoint" />
+            <mxPoint x="2085.0" y="1030" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n114" parent="1" vertex="1" value="거부 기록 후 A&#10;형식 400·415 · frame_id 충돌 409&#10;오래된 프레임 409" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="1940" y="1114" width="290" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="e115" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2230.0" y="579.0" as="sourcePoint" />
+            <mxPoint x="2230" y="1152.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="2276" y="579.0" />
+              <mxPoint x="2276" y="1152.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e116" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2230.0" y="689.0" as="sourcePoint" />
+            <mxPoint x="2230" y="1152.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="2276" y="689.0" />
+              <mxPoint x="2276" y="1152.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n117" parent="1" vertex="1" value="POST /api/events (multipart)&#10;metadata + 증거 이미지 1장" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="360" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n118" parent="1" vertex="1" value="event_id · message_id · 발생 시각 ·&#10;좌표 · 위험도 · 감지 로봇 확인" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="450" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n119" parent="1" vertex="1" value="메타데이터 형식이 유효한가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="540" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n120" parent="1" vertex="1" value="실제 PNG·JPEG이고&#10;5MB 이하인가? (매직바이트)" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="650" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n121" parent="1" vertex="1" value="내용 해시로 파일명 생성&#10;event-{id}-{hash}.png" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="760" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n122" parent="1" vertex="1" value="임시 파일 기록 → 원자적 이름 변경&#10;(같은 파일이 있으면 저장 생략)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="850" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n123" parent="1" vertex="1" value="BEGIN IMMEDIATE&#10;event_id · message_id 조회" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.06;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="940" width="290" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n124" parent="1" vertex="1" value="이미 처리한 이벤트인가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="1030" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n125" parent="1" vertex="1" value="events INSERT (status = NEW)&#10;+ event_evidence INSERT (경로만)&#10;COMMIT" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.06;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="1140" width="290" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="n126" parent="1" vertex="1" value="DB 저장에 성공했는가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="1244" width="290" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n127" parent="1" vertex="1" value="이벤트 로그 한 행 추가&#10;발생시각·이벤트·감지로봇·좌표·&#10;위험도·처리상태·증거이미지" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380.0" y="1354" width="290" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="n128" parent="1" vertex="1" value="A" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=15;fontColor=#000000;align=center;verticalAlign=middle;fontStyle=1;">
+          <mxGeometry x="2495.0" y="1458" width="60" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="e129" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="418" as="sourcePoint" />
+            <mxPoint x="2525.0" y="450" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e130" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="508" as="sourcePoint" />
+            <mxPoint x="2525.0" y="540" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e131" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="618" as="sourcePoint" />
+            <mxPoint x="2525.0" y="650" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e132" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="728" as="sourcePoint" />
+            <mxPoint x="2525.0" y="760" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e133" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="818" as="sourcePoint" />
+            <mxPoint x="2525.0" y="850" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e134" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="908" as="sourcePoint" />
+            <mxPoint x="2525.0" y="940" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e135" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="998" as="sourcePoint" />
+            <mxPoint x="2525.0" y="1030" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e136" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="1108" as="sourcePoint" />
+            <mxPoint x="2525.0" y="1140" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e137" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="1212" as="sourcePoint" />
+            <mxPoint x="2525.0" y="1244" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e138" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="1322" as="sourcePoint" />
+            <mxPoint x="2525.0" y="1354" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e139" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2525.0" y="1426" as="sourcePoint" />
+            <mxPoint x="2525.0" y="1458" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n140" parent="1" vertex="1" value="거부·실패 기록 후 A&#10;형식 400 · 이미지 400 · 내용 다른 중복 409&#10;ROLLBACK + 이번에 만든 파일 삭제 · 500 (로봇 재시도)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380" y="1542" width="290" height="86" as="geometry" />
+        </mxCell>
+        <mxCell id="e141" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2670.0" y="579.0" as="sourcePoint" />
+            <mxPoint x="2670" y="1585.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="2716" y="579.0" />
+              <mxPoint x="2716" y="1585.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e142" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2670.0" y="689.0" as="sourcePoint" />
+            <mxPoint x="2670" y="1585.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="2716" y="689.0" />
+              <mxPoint x="2716" y="1585.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e143" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2670.0" y="1069.0" as="sourcePoint" />
+            <mxPoint x="2670" y="1585.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="2716" y="1069.0" />
+              <mxPoint x="2716" y="1585.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e144" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2670.0" y="1283.0" as="sourcePoint" />
+            <mxPoint x="2670" y="1585.0" as="targetPoint" />
+            <Array as="points">
+              <mxPoint x="2716" y="1283.0" />
+              <mxPoint x="2716" y="1585.0" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n145" parent="1" vertex="1" value="원본과 다른 점: 원본은 &quot;중복 확인 → 사진 저장&quot; 이지만&#10;실제 코드는 &quot;사진 저장 → DB 중복 확인&quot; 이다.&#10;파일명이 내용 해시라 중복 파일은 생기지 않는다." style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="2380" y="1652" width="290" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="n146" parent="1" vertex="1" value="이벤트 행 선택" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300" y="1822.0" width="200" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n147" parent="1" vertex="1" value="상세 열기&#10;증거 이미지 확대 · 처리 이력" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="560" y="1822.0" width="240" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n148" parent="1" vertex="1" value="권한이 ADMIN ·&#10;OPERATOR인가?" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="860" y="1812.0" width="220" height="78" as="geometry" />
+        </mxCell>
+        <mxCell id="n149" parent="1" vertex="1" value="처리 상태 변경 요청&#10;+ 메모 (500자 이하)" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1140" y="1822.0" width="220" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="n150" parent="1" vertex="1" value="순차 전이인가?&#10;신규→확인중→작업요청→조치완료" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1420" y="1810.0" width="280" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="n151" parent="1" vertex="1" value="events.status UPDATE +&#10;event_changes INSERT&#10;(한 트랜잭션)" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.06;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1760" y="1815.0" width="240" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="n152" parent="1" vertex="1" value="목록·상세 갱신" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="2060" y="1822.0" width="180" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="e153" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="500" y="1851.0" as="sourcePoint" />
+            <mxPoint x="560" y="1851.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e154" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="800" y="1851.0" as="sourcePoint" />
+            <mxPoint x="860" y="1851.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e155" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1080" y="1851.0" as="sourcePoint" />
+            <mxPoint x="1140" y="1851.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e156" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1360" y="1851.0" as="sourcePoint" />
+            <mxPoint x="1420" y="1851.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e157" parent="1" edge="1" value="예" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1700" y="1851.0" as="sourcePoint" />
+            <mxPoint x="1760" y="1851.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e158" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="2000" y="1851.0" as="sourcePoint" />
+            <mxPoint x="2060" y="1851.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e159" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="970.0" y="1890.0" as="sourcePoint" />
+            <mxPoint x="970.0" y="1940" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n160" parent="1" vertex="1" value="VIEWER는 조회만" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="840" y="1940" width="200" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="e161" parent="1" edge="1" value="아니오" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1560.0" y="1892.0" as="sourcePoint" />
+            <mxPoint x="1560.0" y="1940" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n162" parent="1" vertex="1" value="409 · 현재 상태 유지" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="1410" y="1940" width="200" height="44" as="geometry" />
+        </mxCell>
+        <mxCell id="n163" parent="1" vertex="1" value="시스템 모니터는 로봇 운영 명령(순찰 시작·복귀·대피)을 발행하지 않는다. 상태 변경은 DB 관제 기록이다." style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="2300" y="1814" width="380" height="74" as="geometry" />
+        </mxCell>
+        <mxCell id="n164" parent="1" vertex="1" value="/history 페이지" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="300" y="2090" width="200" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="n165" parent="1" vertex="1" value="조건 입력&#10;기간 · 유형 · 로봇 · 처리 상태" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="560" y="2090" width="240" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="n166" parent="1" vertex="1" value="5개 테이블 공통 열 SELECT + UNION&#10;events · event_changes ·&#10;robot_status_history · patrol_runs · handovers" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="860" y="2090" width="330" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="n167" parent="1" vertex="1" value="시간순 페이지 조회" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1250" y="2090" width="200" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="n168" parent="1" vertex="1" value="결과 표 표시" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1510" y="2090" width="180" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="e169" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="500" y="2128.0" as="sourcePoint" />
+            <mxPoint x="560" y="2128.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e170" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="800" y="2128.0" as="sourcePoint" />
+            <mxPoint x="860" y="2128.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e171" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1190" y="2128.0" as="sourcePoint" />
+            <mxPoint x="1250" y="2128.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e172" parent="1" edge="1" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeWidth=1.5;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#000000;">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="1450" y="2128.0" as="sourcePoint" />
+            <mxPoint x="1510" y="2128.0" as="targetPoint" />
+            <Array as="points" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="n173" parent="1" vertex="1" value="commands 테이블과 일반 카메라 영상은 검색 대상이 아니다.&#10;시스템 모니터가 명령을 생성하지 않고 일반 영상은 보존하지 않기 때문이다." style="rounded=0;whiteSpace=wrap;html=1;dashed=1;fillColor=#ffffff;strokeColor=#777777;fontFamily=Noto Sans CJK KR;fontSize=10;fontColor=#555555;align=center;verticalAlign=middle;">
+          <mxGeometry x="1770" y="2090" width="380" height="76" as="geometry" />
+        </mxCell>
+        <mxCell id="n174" parent="1" vertex="1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fbfbfb;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=11;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1060" y="1380" width="700" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="n175" parent="1" vertex="1" value="" style="rounded=1;arcSize=50;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=9;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1080" y="1424" width="46" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n176" parent="1" vertex="1" value="" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=9;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1154" y="1424" width="46" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n177" parent="1" vertex="1" value="" style="rhombus;whiteSpace=wrap;html=1;shapeInside=1;fillColor=#eeeeee;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=9;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1228" y="1424" width="46" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n178" parent="1" vertex="1" value="" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;size=0.06;fillColor=#eeeeee;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=9;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1302" y="1424" width="46" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="n179" parent="1" vertex="1" value="A" style="ellipse;whiteSpace=wrap;html=1;fillColor=#eeeeee;strokeColor=#000000;fontFamily=Noto Sans CJK KR;fontSize=9;fontColor=#000000;align=center;verticalAlign=middle;">
+          <mxGeometry x="1376" y="1424" width="46" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

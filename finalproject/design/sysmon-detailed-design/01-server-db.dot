@@ -1,0 +1,28 @@
+digraph G {
+      graph [rankdir=LR, bgcolor="white", pad="0.45", nodesep="0.55", ranksep="0.7", splines=ortho];
+      node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=17, margin="0.22,0.16"];
+      edge [color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=14, arrowsize=0.8];
+    
+ start [label="시작",fillcolor="#e7f3e9"];
+ flask [label="Flask 앱 실행\ncreate_app() 호출"];
+ config [label="DB 파일 경로 설정\ninstance/sysmon.sqlite3"];
+ folder [label="instance 폴더 존재 확인"];
+ makefolder [label="폴더 생성"];
+ init [label="init_db() 호출"];
+ connect [label="sqlite3.connect() 실행\nSQLite DB 연결"];
+ connected [label="DB 연결 성공?",shape=diamond,fillcolor="#fff2d9"];
+ fail [label="DB 오류 기록\n서버 시작 중단 또는 재시도",fillcolor="#fce9e5"];
+ foreign [label="외래 키 활성화\nPRAGMA foreign_keys = ON"];
+ tables [label="필수 테이블 존재 확인"];
+ exists [label="모든 테이블 존재?",shape=diamond,fillcolor="#fff2d9"];
+ create [label="users·robots·events 등\n테이블 생성"];
+ seed [label="관리자 계정·지도·P1~P7\n도크·안전구역 초기 데이터 확인"];
+ receiver [label="샘플 HTTP / 수신부 시작"];
+ login [label="로그인 페이지 표시",fillcolor="#e7f3e9"];
+ start -> flask -> config -> folder;
+ folder -> makefolder [label="없음"];folder -> init [label="있음"];makefolder -> init;
+ init -> connect -> connected;connected -> fail [label="아니오"];connected -> foreign [label="예"];
+ foreign -> tables -> exists;exists -> create [label="아니오"];exists -> seed [label="예"];create -> seed;
+ seed -> receiver -> login;
+
+}

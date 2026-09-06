@@ -1,0 +1,19 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ users [label="users\n사용자 ID·계정·비밀번호 해시·권한",fillcolor="#fff2d9"];
+ robots [label="robots / robot_latest_status\nAMR1·AMR2 기본 정보·최신 상태\nrobot_status_history: 상태 기록"];
+ maps [label="maps / map_features / routes\n지도 버전·좌표 변환·P1~P7\n안전구역·도크·순찰 경로"];
+ event [label="events\n이벤트 ID / 외부 이벤트 ID / 로봇 ID\n발생 시각·종류·좌표·위험도 상/중/하\n처리 상태·version·대표 이미지 경로",fillcolor="#fff2d9"];
+ photo [label="증거 파일 저장소\n로봇1 사진 1장 / event_id 연결\n원본 영상은 저장하지 않음"];
+ change [label="event_changes\n사건 ID·변경자·시각\n이전/새 상태·메모"];
+ command [label="commands / command_updates\n요청 ID·요청자·로봇·명령·인자\n실행 상태·전송 상태·결과·사유",fillcolor="#fff2d9"];
+ patrol [label="patrol_runs / patrol_visits\n순찰 ID·로봇·경로·시작/종료\n관측점 ID·방문 시각·결과"];
+ handover [label="handovers / handover_updates\n교대 ID·인계/인수 로봇\n관련 순찰 ID·사유·시각·결과"];
+ users -> change [label="변경자"];users -> command [label="요청자"];
+ robots -> event [label="발생 소스"];robots -> command [label="대상"];
+ maps -> robots [label="위치 참조"];maps -> event [label="사건 위치"];maps -> patrol [label="경로 버전"];
+ event -> photo [label="경로 참조: 대표 1장"];event -> change [label="변경 이력"];
+ command -> patrol [label="선택적 요청 연결"];robots -> patrol [label="수행 로봇"];
+ patrol -> handover [label="교대 전·후 순찰"];
+
+}

@@ -1,0 +1,26 @@
+digraph G {
+      graph [rankdir=LR, bgcolor="white", pad="0.45", nodesep="0.55", ranksep="0.7", splines=ortho];
+      node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=17, margin="0.22,0.16"];
+      edge [color="#597185", penwidth=2, fontname="Noto Sans CJK KR", fontsize=14, arrowsize=0.8];
+    
+ manage [label="로봇 관리 화면 표시",fillcolor="#e7f3e9"];
+ select [label="대상 로봇 선택\nAMR1 또는 AMR2"];
+ command [label="명령 선택\n순찰 시작·일시정지·재개·복귀·대피"];
+ permission [label="명령 요청 권한 확인",shape=diamond,fillcolor="#fff2d9"];
+ deny [label="무권한 요청 거부",fillcolor="#fce9e5"];
+ requestid [label="request_id 생성\n중복 요청 키 확인"];
+ save [label="commands 테이블 저장\n현재 상태: 요청됨"];
+ dispatch [label="미션 모듈에 요청 전달"];
+ ack [label="수락 결과 수신?",shape=diamond,fillcolor="#fff2d9"];
+ accepted [label="수락됨·진행중 저장"];
+ rejected [label="거절됨·사유 저장",fillcolor="#fce9e5"];
+ result [label="완료 또는 실패 결과 수신"];
+ update [label="명령 상태·사유·시각 저장\n명령 이력 화면 갱신"];
+ patrol [label="순찰 ID·경로·시작/종료 저장\nP1~P7 방문 결과 저장"];
+ handover [label="교대 ID·인계/인수 로봇\n사유·시각·결과 저장"];
+ history [label="사건·명령·순찰·교대 이력\n기간·로봇·상태로 검색",fillcolor="#e7f3e9"];
+ manage -> select -> command -> permission;permission -> deny [label="아니오"];permission -> requestid [label="예"];
+ requestid -> save -> dispatch -> ack;ack -> accepted [label="수락"];ack -> rejected [label="거절/지연"];
+ accepted -> result -> update;rejected -> update;update -> patrol -> handover -> history;
+
+}

@@ -1,0 +1,18 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ rx [label="감지 이벤트 수신\n유형·시각·좌표·위험등급·증거",shape=ellipse,fillcolor="#eaf5ec"];
+ create [label="중복 검증 → 증거 파일·DB 저장\n이벤트 상태: 신규"];
+ alert [label="대시보드 경고 목록 / 지도에 표시\n좌표 불명: 목록에 표시 + 위치 미확정"];
+ open [label="관리자 상세 열기\n이미지·측정값·좌표·시각 확인"];
+ request [label="권한 있는 사용자가 상태 변경 요청\n신규 → 확인중 → 작업요청 → 조치완료\n각 단계에서 동일 검증 수행"];
+ check [label="권한·현재 상태·버전 유효?",shape=diamond,fillcolor="#fff2d9"];
+ deny [label="거부 이유 / 최신 상태 표시\n무권한 또는 다른 사용자와 충돌",fillcolor="#fce9e5"];
+ save [label="동일 트랜잭션으로 저장\n현재 상태 갱신 + 변경 이력 추가\n변경자·시각·이전/새 상태·메모"];
+ refresh [label="목록·상세·이력 갱신",fillcolor="#eaf5ec"];
+ note [label="작업요청은 사건 처리 단계\n로봇 명령 전송과 별개\n외부 작업 시스템 연동은 미확정",shape=note,fillcolor="#fff2d9"];
+ rx -> create -> alert -> open -> request -> check;
+ check -> deny [label="아니오"];check -> save [label="예"];save -> refresh;
+ deny -> open [label="새로고침 후 확인"];
+ note -> request [style=dashed,label="의미 구분"];
+
+}

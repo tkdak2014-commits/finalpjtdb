@@ -1,0 +1,21 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ users [label="users\nPK user_id / role / password_hash",fillcolor="#fff2d9"];
+ robots [label="robots\nPK robot_id / name"];
+ latest [label="robot_latest_status\nPK·FK robot_id / 상태·배터리·좌표\nmap_id / frame_id / observed_at / last_seen"];
+ logs [label="robot_status_history\nPK id / FK robot_id / 수신 상태·시각"];
+ maps [label="maps / map_features / routes\n지도 버전·좌표 변환 정보\nP1~P7 / 안전구역 / 도크 / 경로"];
+ events [label="events / event_evidence\nPK event_id / source_event_id UNIQUE\nFK robot_id(선택) / camera_id / map_id\n유형·위험등급·좌표·처리상태·version\n증거 경로·측정값",fillcolor="#fff2d9"];
+ changes [label="event_changes\nFK event_id / actor_id\n이전·다음 상태 / 메모 / 시각"];
+ commands [label="commands / command_updates\nPK request_id / FK robot_id·requested_by\n요청 종류·인자·현재 상태 / 결과 이력",fillcolor="#fff2d9"];
+ patrols [label="patrol_runs / patrol_visits\n순찰 ID·로봇·경로 버전·명령 ID\n관측점 방문 시각·결과",fillcolor="#fff2d9"];
+ handovers [label="handovers\n교대 ID / 인계·인수 robot_id\n이전·다음 patrol_id / 사유·상태·시각",fillcolor="#fff2d9"];
+ users -> commands [label="1:N 요청"];users -> changes [label="1:N 변경"];
+ robots -> latest [label="1:0..1"];robots -> logs [label="1:N"];
+ robots -> events [label="1:N"];robots -> commands [label="1:N"];
+ maps -> latest [label="좌표계"];maps -> events [label="위치"];maps -> patrols [label="경로"];
+ events -> changes [label="1:N"];
+ commands -> patrols [label="선택 연결"];
+ robots -> patrols [label="1:N"];patrols -> handovers [label="인계 전·후 연결"];
+
+}

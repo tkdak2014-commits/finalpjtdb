@@ -1,0 +1,30 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="관리자 접속",shape=ellipse,fillcolor="#dcebdc"];
+ login [label="로그인 페이지 표시\n아이디 / 비밀번호 입력"];
+ check [label="인증 성공?",shape=diamond,fillcolor="#fff2d9"];
+ error [label="로그인 오류 표시\n재입력",fillcolor="#fce9e5"];
+ home [label="세션 생성 → Camera 페이지 표시\n서버에 최신 상태 / 이벤트 조회"];
+ count [label="이벤트가 있는가?",shape=diamond,fillcolor="#fff2d9"];
+ empty [label="빈 목록 표시\n감지 이벤트가 없습니다"];
+ rows [label="최근 이벤트 / 알림 표시"];
+ monitor [label="영상 2개 / 로봇별 상태 모니터링\n신호 없으면 연결 대기 표시\n수신 데이터로 화면 지속 갱신"];
+ select [label="관리자 화면 조작",shape=diamond,fillcolor="#fff2d9"];
+ search [label="DB 탭 → 날짜 / 로봇 / 유형 검색\n서버가 SQLite 조회"];
+ found [label="검색 결과 존재?",shape=diamond,fillcolor="#fff2d9"];
+ none [label="검색 결과 없음 표시"];
+ list [label="이벤트 목록 표시 → 행 선택"];
+ detail [label="상세 조회\n시간 · 위치 · 위험 등급 · 근거 이미지"];
+ logout [label="로그아웃 → 세션 종료",shape=ellipse,fillcolor="#dcebdc"];
+ start -> login -> check;
+ check -> home [label="예"]; check -> error [label="아니오"];error -> login;
+ home -> count;count -> empty [label="아니오"];count -> rows [label="예"];
+ empty -> monitor;rows -> monitor;monitor -> select;
+ select -> search [label="DB 조회"]; select -> logout [label="로그아웃"];
+ select -> monitor [label="계속 관제"];
+ search -> found;found -> none [label="아니오"];none -> search [label="조건 변경"];
+ found -> list [label="예"];list -> detail;detail -> search [label="다시 검색"];
+ detail -> monitor [label="Camera 탭"];
+ logout -> login [label="로그인 화면 복귀"];
+
+}

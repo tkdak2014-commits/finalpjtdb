@@ -1,0 +1,214 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="functional-flow-sysmon-topics" name="기능 플로우 - Sysmon 토픽 추가">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1500" pageHeight="1250" math="0" shadow="0" background="#ffffff">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Sysmon 담당 영역: ROS 2 토픽을 구독하고 DB·화면에 반영한다. -->
+        <mxCell id="sysmon-area" parent="1" vertex="1" value="Sysmon 담당 영역&#10;(Subscriber / 수신·검증·저장)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#eff6ff;strokeColor=#3977b9;dashed=1;strokeWidth=2;fontColor=#1d4266;fontFamily=Noto Sans CJK KR;fontSize=16;align=left;verticalAlign=top;spacingTop=12;spacingLeft=14;">
+          <mxGeometry x="955" y="35" width="490" height="1140" as="geometry" />
+        </mxCell>
+
+        <!-- Main function flow -->
+        <mxCell id="start" parent="1" vertex="1" value="순찰 시작 (undock)" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="95" y="35" width="190" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="cctv-left" parent="1" vertex="1" value="CCTV 1/2 탐지" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="125" y="155" width="135" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="vehicle-entry" parent="1" vertex="1" value="차량 진입 탐지" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="85" y="250" width="215" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="patrol-first" parent="1" vertex="1" value="P1 ~ P7 웨이포인트&#10;방문 및 스캔" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="80" y="420" width="225" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="amr-camera" parent="1" vertex="1" value="AMR 카메라" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="115" y="555" width="155" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="event-detect" parent="1" vertex="1" value="이벤트 탐지" style="rhombus;whiteSpace=wrap;html=1;fillColor=#fff7e6;strokeColor=#d28b22;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="85" y="650" width="215" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="remaining-patrol" parent="1" vertex="1" value="남은 웨이포인트&#10;방문 및 스캔" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="80" y="850" width="225" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="return-dock" parent="1" vertex="1" value="도킹 스테이션 복귀" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="95" y="1035" width="190" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="safe-zone" parent="1" vertex="1" value="안전 구역 이동" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="500" y="265" width="180" height="58" as="geometry" />
+        </mxCell>
+        <mxCell id="cctv-right" parent="1" vertex="1" value="CCTV 1/2 탐지" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="515" y="365" width="150" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="vehicle-stop" parent="1" vertex="1" value="차량 멈춤/나감" style="rhombus;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="480" y="455" width="220" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="event-log-alert" parent="1" vertex="1" value="이벤트 기록 / 알림&#10;Sysmon 수신 후 DB 저장·화면 반영" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff7e6;strokeColor=#d28b22;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="415" y="665" width="220" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="db" parent="1" vertex="1" value="DB / Sysmon&#10;이벤트·상태·순찰 기록" style="shape=cylinder;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#4d4d4d;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="735" y="650" width="190" height="92" as="geometry" />
+        </mxCell>
+        <mxCell id="patrol-record" parent="1" vertex="1" value="순찰 기록 생성&#10;patrol_runs / patrol_visits" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff7e6;strokeColor=#d28b22;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="420" y="1035" width="220" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="mission-source" parent="1" vertex="1" value="미션 모듈 수행 기록&#10;순찰·방문·결과" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#777777;fontColor=#222222;fontFamily=Noto Sans CJK KR;fontSize=13;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="700" y="990" width="205" height="72" as="geometry" />
+        </mxCell>
+
+        <!-- Sysmon subscription detail -->
+        <mxCell id="topic-event" parent="1" vertex="1" value="/vision/amr/detection_event&#10;parking_interfaces/msg/DetectionEvent&#10;robot_id · event_type(1/2/3)&#10;timestamp · image(CompressedImage)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#3977b9;strokeWidth=2;fontColor=#1d4266;fontFamily=Noto Sans CJK KR;fontSize=13;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="990" y="175" width="420" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="topic-status" parent="1" vertex="1" value="/{robot_ns}/robot_status&#10;parking_interfaces/msg/RobotStatus&#10;로봇 상태·위치·배터리 등&#10;※ 상세 필드는 메시지 정의 확인" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#3977b9;strokeWidth=2;fontColor=#1d4266;fontFamily=Noto Sans CJK KR;fontSize=13;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="990" y="325" width="420" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="topic-keepout" parent="1" vertex="1" value="/keepout/status&#10;parking_interfaces/msg/KeepoutStatus&#10;Keepout 필터 활성 상태 변경" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#3977b9;strokeWidth=2;fontColor=#1d4266;fontFamily=Noto Sans CJK KR;fontSize=13;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="990" y="475" width="420" height="95" as="geometry" />
+        </mxCell>
+        <mxCell id="topic-mission" parent="1" vertex="1" value="미션 수행 기록 토픽&#10;토픽명·메시지 타입 미정&#10;patrol_id · visit_id · P1~P7&#10;방문 시각 · 상태 · 결과" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fffdf5;strokeColor=#d28b22;dashed=1;strokeWidth=2;fontColor=#7b5417;fontFamily=Noto Sans CJK KR;fontSize=13;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="990" y="610" width="420" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="sysmon-process" parent="1" vertex="1" value="수신 데이터 검증·중복 확인&#10;이벤트·상태·순찰 기록 저장&#10;대시보드·이벤트 알림 갱신" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e4f0ff;strokeColor=#3977b9;strokeWidth=2;fontColor=#1d4266;fontFamily=Noto Sans CJK KR;fontSize=14;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="990" y="780" width="420" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="sysmon-db-map" parent="1" vertex="1" value="저장 대상&#10;events · event_evidence&#10;robot_latest_status · robot_status_history&#10;patrol_runs · patrol_visits" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e4f0ff;strokeColor=#3977b9;strokeWidth=2;fontColor=#1d4266;fontFamily=Noto Sans CJK KR;fontSize=13;align=center;verticalAlign=middle;spacing=6;">
+          <mxGeometry x="990" y="925" width="420" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" vertex="1" value="파란 점선: Sysmon 구독 데이터&#10;주황색: Sysmon 기록·저장 담당&#10;순찰 명령 송신은 본 범위에 포함하지 않음" style="text;html=1;whiteSpace=wrap;strokeColor=none;fillColor=none;fontColor=#374151;fontFamily=Noto Sans CJK KR;fontSize=13;align=left;verticalAlign=middle;spacing=4;">
+          <mxGeometry x="990" y="1070" width="420" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- Main flow arrows -->
+        <mxCell id="e-start-cctv" edge="1" parent="1" source="start" target="cctv-left" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-cctv-entry" edge="1" parent="1" source="cctv-left" target="vehicle-entry" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-entry-patrol" edge="1" parent="1" source="vehicle-entry" target="patrol-first" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-entry-safe" edge="1" parent="1" source="vehicle-entry" target="safe-zone" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-safe-cctv" edge="1" parent="1" source="safe-zone" target="cctv-right" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-cctv-stop" edge="1" parent="1" source="cctv-right" target="vehicle-stop" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-stop-loop" edge="1" parent="1" source="vehicle-stop" target="cctv-right" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="507" />
+              <mxPoint x="760" y="389" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-stop-patrol" edge="1" parent="1" source="vehicle-stop" target="patrol-first" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-patrol-camera" edge="1" parent="1" source="patrol-first" target="amr-camera" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-camera-event" edge="1" parent="1" source="amr-camera" target="event-detect" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-event-record" edge="1" parent="1" source="event-detect" target="event-log-alert" value="Yes" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#d28b22;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-event-remaining" edge="1" parent="1" source="event-detect" target="remaining-patrol" value="No" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-remaining-return" edge="1" parent="1" source="remaining-patrol" target="return-dock" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#4d4d4d;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-return-record" edge="1" parent="1" source="return-dock" target="patrol-record" value="순찰 종료" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#d28b22;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-event-db" edge="1" parent="1" source="event-log-alert" target="db" value="이벤트 저장" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#d28b22;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-record-db" edge="1" parent="1" source="patrol-record" target="db" value="순찰·방문 이력 저장" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#d28b22;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="650" y="1065" />
+              <mxPoint x="700" y="780" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e-return-next" edge="1" parent="1" source="return-dock" target="start" value="다음 순찰" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#777777;dashed=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="40" y="1070" />
+              <mxPoint x="40" y="70" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <!-- Sysmon subscription arrows: dashed blue means received data. -->
+        <mxCell id="s-event-topic" edge="1" parent="1" source="event-detect" target="topic-event" value="publish" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="370" y="702" />
+              <mxPoint x="370" y="130" />
+              <mxPoint x="950" y="130" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s-status-topic" edge="1" parent="1" source="patrol-first" target="topic-status" value="상태 publish" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="335" y="456" />
+              <mxPoint x="335" y="380" />
+              <mxPoint x="950" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s-keepout-topic" edge="1" parent="1" source="safe-zone" target="topic-keepout" value="상태 publish" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="750" y="294" />
+              <mxPoint x="750" y="522" />
+              <mxPoint x="950" y="522" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s-mission-topic" edge="1" parent="1" source="mission-source" target="topic-mission" value="수행 기록 publish" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="905" y="1026" />
+              <mxPoint x="950" y="666" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s-event-process" edge="1" parent="1" source="topic-event" target="sysmon-process" value="구독" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s-status-process" edge="1" parent="1" source="topic-status" target="sysmon-process" value="구독" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s-keepout-process" edge="1" parent="1" source="topic-keepout" target="sysmon-process" value="구독" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s-mission-process" edge="1" parent="1" source="topic-mission" target="sysmon-process" value="구독" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="s-process-db" edge="1" parent="1" source="sysmon-process" target="db" value="내부 DB 저장" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="945" y="825" />
+              <mxPoint x="945" y="790" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="s-process-map" edge="1" parent="1" source="sysmon-process" target="sysmon-db-map" value="저장·화면 갱신" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;endArrow=block;endFill=1;strokeColor=#3977b9;dashed=1;dashPattern=6 4;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

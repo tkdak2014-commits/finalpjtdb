@@ -1,0 +1,25 @@
+digraph G { graph [rankdir=LR, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ start [label="로그인된 대시보드 초기 조회",shape=ellipse,fillcolor="#e7f3e9"];
+ map [label="지도 버전·원점·해상도·좌표계 조회\n경로 / P1~P7 / 안전구역(polygon) / 도크"];
+ rx [label="AMR1·AMR2 상태 수신\n배터리·임무 상태·좌표·수신 시각"];
+ valid [label="ID·시각·순서 유효?",shape=diamond,fillcolor="#fff2d9"];
+ discard [label="오류 기록 / 중복·오래된 값 반영 제외"];
+ save [label="최신 상태 갱신·상태 이력 저장"];
+ coord [label="좌표계·지도 버전 일치?",shape=diamond,fillcolor="#fff2d9"];
+ yes [label="지도 좌표 → 화면 좌표 변환\n해당 로봇 / 사건 마커 표시"];
+ no [label="위치 미확정 표시\n임의 좌표로 대체하지 않음",fillcolor="#fce9e5"];
+ screen [label="배터리·임무·마지막 수신 시각 표시\n미수신 기준 초과 시 연결 끊김 표시"];
+ video [label="영상 소스 4개 각각 연결\nAMR1 / AMR2 / 고정 웹캠1 / 웹캠2"];
+ connected [label="해당 영상 수신 성공?",shape=diamond,fillcolor="#fff2d9"];
+ stream [label="영상 영역에 최신 프레임 표시\n원본 영상 DB 저장 없음"];
+ waiting [label="해당 영상만 연결 대기·단절 표시\n다른 영상과 상태 갱신 계속",fillcolor="#fce9e5"];
+ loop [label="주기 조회 / 새 데이터 수신 때 갱신 반복",shape=ellipse,fillcolor="#e7f3e9"];
+ start -> map;start -> rx;start -> video;
+ rx -> valid;valid -> discard [label="아니오"];valid -> save [label="예"];
+ save -> coord;map -> coord;coord -> yes [label="예"];coord -> no [label="아니오"];
+ save -> screen;yes -> loop;no -> loop;screen -> loop;discard -> loop;
+ video -> connected;connected -> stream [label="예"];connected -> waiting [label="아니오"];
+ stream -> loop;waiting -> loop;
+
+}

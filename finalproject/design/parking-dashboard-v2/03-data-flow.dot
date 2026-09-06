@@ -1,0 +1,25 @@
+digraph G { graph [rankdir=TB, bgcolor="white", pad="0.4", nodesep="0.55", ranksep="0.65", splines=polyline]; node [shape=box, style="filled", fillcolor="#edf3f8", color="#597185", fontname="Noto Sans CJK KR", fontsize=17, margin="0.2,0.15"]; edge [color="#597185", fontname="Noto Sans CJK KR", fontsize=13, arrowsize=0.8];
+
+ input [label="수신 대기\n임시 HTTP / 추후 ROS 어댑터",shape=ellipse,fillcolor="#eaf5ec"];
+ normalize [label="공통 형식 변환\nsource_id · message_id · observed_at\nrobot_id · map_id / frame_id"];
+ valid [label="형식·참조·중복·순서 검증",shape=diamond,fillcolor="#fff2d9"];
+ reject [label="중복은 처리 생략\n오류·역순은 기록 / 최신값 덮어쓰기 방지",fillcolor="#fce9e5"];
+ type [label="수신 종류",shape=diamond,fillcolor="#fff2d9"];
+ status [label="상태: 최신값 + 상태 이력 저장\n배터리·위치·연결·임무 상태\n좌표 미확정 시 지도 위치 미표시"];
+ event [label="감지: 이벤트 + 증거 이미지 저장\n초기 처리 상태 신규\n04 이벤트 흐름으로 연결"];
+ cmd [label="명령 결과: request_id 매칭\n상태 이력 기록 / 05 흐름 참조"];
+ patrol [label="순찰·관측점 방문·교대 기록\n06 흐름 참조"];
+ commit [label="DB 트랜잭션 성공?",shape=diamond,fillcolor="#fff2d9"];
+ fail [label="오류 기록 / 미처리 입력 보관\n재처리 정책에 따라 복구",fillcolor="#fce9e5"];
+ update [label="UI API 최신값 조회 → 화면 갱신\n지도·상태·경고·이력에 반영",fillcolor="#eaf5ec"];
+ next [label="다음 메시지 수신 대기",shape=ellipse,fillcolor="#eaf5ec"];
+ input -> normalize -> valid;
+ valid -> reject [label="거부 / 중복"];reject -> next;
+ valid -> type [label="통과"];
+ type -> status [label="상태"];type -> event [label="이벤트"];
+ type -> cmd [label="명령 결과"];type -> patrol [label="순찰·교대"];
+ status -> commit;event -> commit;cmd -> commit;patrol -> commit;
+ commit -> update [label="예"];commit -> fail [label="아니오"];
+ update -> next;fail -> next;
+
+}
