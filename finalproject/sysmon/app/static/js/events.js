@@ -49,8 +49,12 @@ if (eventsPanel) {
         time.textContent = event.occurred_label;
         timeCell.appendChild(time);
         const typeCell = addTextCell(row, "");
-        const type = document.createElement("strong");
+        const type = document.createElement("button");
+        type.type = "button";
+        type.className = "compact-event-button";
+        type.dataset.eventDetail = event.event_id;
         type.textContent = event.event_label;
+        type.addEventListener("click", () => openDetail(event.event_id));
         typeCell.appendChild(type);
         addTextCell(row, `${event.robot_name} ${event.robot_id}`);
         addTextCell(row, event.location_label);

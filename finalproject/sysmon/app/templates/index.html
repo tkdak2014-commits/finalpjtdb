@@ -53,7 +53,25 @@
             <div><p class="eyebrow">MONITORING OVERVIEW</p><h1>통합 대시보드</h1><p class="heading-description">주차장과 로봇의 상황을 한눈에 확인하세요.</p></div>
             <span class="mode-label">{{ icon('info', 15) }} <span data-dashboard-mode>{{ '로봇 상태 수신 중' if robots|selectattr('has_status')|list else '로봇 상태 수신 대기' }}</span></span>
         </div>
-        <div class="monitor-grid">
+        <!-- [대시보드 재배치] 상태·지도·4분할 영상·최근 로그를 한 화면에 배치한다. -->
+        <section class="status-strip" aria-label="시스템과 로봇 상태 요약">
+            <article class="panel system-summary-card">
+                <div class="system-summary-heading"><span>{{ icon('shield', 19) }}</span><div><small>시스템 상태</small><strong data-fleet-connection>{{ fleet_status }}</strong></div></div>
+                <dl><div><dt>서버</dt><dd>정상</dd></div><div><dt>모니터링</dt><dd data-dashboard-mode>{{ '로봇 상태 수신 중' if robots|selectattr('has_status')|list else '로봇 상태 수신 대기' }}</dd></div></dl>
+            </article>
+            <!-- [5단계: 로봇 상태] 서버 렌더링 후 로그인 전용 API를 2초마다 조회해 같은 카드를 갱신한다. -->
+            <section class="robot-grid" id="robot-status" aria-label="AMR1·AMR2 상태" data-status-url="{{ url_for('robots.list_status') }}">
+                {% for robot in robots %}
+                <article class="panel robot-card" data-robot-id="{{ robot.id }}" aria-labelledby="{{ robot.id }}-title">
+                    <div class="robot-heading"><h2 id="{{ robot.id }}-title"><span class="robot-icon {{ 'one' if loop.first else 'two' }}">{{ icon('robot', 20) }}</span>{{ robot.name }} <small>{{ robot.id }}</small></h2><span class="robot-connection {{ robot.connection_status|lower }}"><i class="status-dot"></i><span data-field="connection-label">{{ robot.connection_label }}</span></span></div>
+                    <div class="battery-row"><span>배터리</span><strong aria-label="{{ '배터리 ' ~ robot.battery ~ '퍼센트' if robot.battery is not none else '배터리 정보 없음' }}"><span data-field="battery">{{ robot.battery|round(0)|int if robot.battery is not none else '—' }}</span><small>%</small></strong><span class="battery-outline" aria-hidden="true"><span data-field="battery-fill" style="width: {{ robot.battery if robot.battery is not none else 0 }}%"></span></span></div>
+                    <dl class="robot-details"><div><dt>임무 상태</dt><dd data-field="mission">{{ robot.mission_label }}</dd></div><div><dt>위치</dt><dd data-field="location">{{ robot.location_label }}</dd></div><div><dt>최근 수신</dt><dd data-field="received">{{ robot.received_label }}</dd></div></dl>
+                </article>
+                {% endfor %}
+            </section>
+        </section>
+
+        <div class="operations-grid">
             <!-- [6단계: NAV 지도] 점유 지도 PNG와 로봇 위치·최근 경로를 하나의 SVG 좌표계에 겹친다. -->
             <section class="panel map-panel" id="parking-map" aria-labelledby="map-title" data-map-url="{{ url_for('maps.current_map') }}">
                 <div class="panel-heading"><h2 id="map-title">{{ icon('map', 18) }} 지하주차장 NAV 지도</h2><span class="small-tag" data-map-state>{{ map_state.state_label }}</span></div>
@@ -72,17 +90,7 @@
                 <p class="panel-footnote">Nav2 정적 점유 지도 · 동적 장애물은 costmap 연결 후 표시 · 관측점·도크 좌표 미등록</p>
             </section>
 
-            <div class="robot-and-video">
-                <!-- [5단계: 로봇 상태] 서버 렌더링 후 로그인 전용 API를 2초마다 조회해 같은 카드를 갱신한다. -->
-                <section class="robot-grid" id="robot-status" aria-label="AMR1·AMR2 상태" data-status-url="{{ url_for('robots.list_status') }}">
-                    {% for robot in robots %}
-                    <article class="panel robot-card" data-robot-id="{{ robot.id }}" aria-labelledby="{{ robot.id }}-title">
-                        <div class="robot-heading"><h2 id="{{ robot.id }}-title"><span class="robot-icon {{ 'one' if loop.first else 'two' }}">{{ icon('robot', 20) }}</span>{{ robot.name }} <small>{{ robot.id }}</small></h2><span class="robot-connection {{ robot.connection_status|lower }}"><i class="status-dot"></i><span data-field="connection-label">{{ robot.connection_label }}</span></span></div>
-                        <div class="battery-row"><span>배터리</span><strong aria-label="{{ '배터리 ' ~ robot.battery ~ '퍼센트' if robot.battery is not none else '배터리 정보 없음' }}"><span data-field="battery">{{ robot.battery|round(0)|int if robot.battery is not none else '—' }}</span><small>%</small></strong><span class="battery-outline" aria-hidden="true"><span data-field="battery-fill" style="width: {{ robot.battery if robot.battery is not none else 0 }}%"></span></span></div>
-                        <dl class="robot-details"><div><dt>임무 상태</dt><dd data-field="mission">{{ robot.mission_label }}</dd></div><div><dt>위치</dt><dd data-field="location">{{ robot.location_label }}</dd></div><div><dt>최근 수신</dt><dd data-field="received">{{ robot.received_label }}</dd></div></dl>
-                    </article>
-                    {% endfor %}
-                </section>
+            <div class="camera-workspace">
                 <!-- [9단계: 최신 영상] 네 카메라의 최신 프레임과 5초 수신 상태를 1초마다 갱신한다. -->
                 <section class="camera-grid" id="camera-feeds" aria-label="로봇 및 고정 웹캠 영상"
                          data-cameras-url="{{ url_for('cameras.list_cameras') }}">
@@ -101,63 +109,67 @@
                     {% endfor %}
                 </section>
             </div>
+
+            <!-- 최근 로그는 지도와 네 영상을 가리지 않도록 오른쪽 열에 둔다. -->
+            <aside class="recent-log-column" aria-label="최근 이벤트와 차량 입출차">
+                <!-- [8단계: 이벤트 로그] DB 최근 이벤트를 먼저 렌더링하고 로그인 API로 3초마다 갱신한다. -->
+                <section class="panel events-panel" id="event-log" aria-labelledby="events-title"
+                         data-events-url="{{ url_for('events.list_events') }}"
+                         data-detail-url-template="{{ url_for('events.event_detail', event_id='__EVENT_ID__') }}"
+                         data-status-url-template="{{ url_for('events.change_status', event_id='__EVENT_ID__') }}"
+                         data-clear-url="{{ url_for('dashboard.clear_recent_log', log_name='events') }}"
+                         data-csrf-token="{{ csrf_token() }}"
+                         data-can-update="{{ 'true' if g.user.role in ('ADMIN', 'OPERATOR') else 'false' }}">
+                    <div class="panel-heading"><h2 id="events-title">{{ icon('log', 18) }} 이벤트 로그</h2><div class="log-tools"><span class="event-wait"><b data-event-count>{{ events|length }}</b>건 표시</span><button class="clear-log-button" type="button" data-clear-events>표시 초기화</button></div></div>
+                    <div class="event-table-scroll" tabindex="0" role="region" aria-label="이벤트 목록 표">
+                        <table class="event-table"><caption class="visually-hidden">발생 시각, 이벤트, 감지 로봇, 좌표, 위험도, 처리 상태, 증거 이미지</caption>
+                            <thead><tr><th scope="col">발생 시각</th><th scope="col">이벤트</th><th scope="col">감지 로봇</th><th scope="col">위치 (좌표)</th><th scope="col">위험도</th><th scope="col">처리 상태</th><th scope="col">증거 이미지</th></tr></thead>
+                            <tbody data-event-rows>
+                            {% for event in events %}
+                                <tr data-event-id="{{ event.event_id }}">
+                                    <td><time datetime="{{ event.occurred_at }}">{{ event.occurred_label }}</time></td>
+                                    <td><button class="compact-event-button" type="button" data-event-detail="{{ event.event_id }}">{{ event.event_label }}</button></td>
+                                    <td>{{ event.robot_name }} <small>{{ event.robot_id }}</small></td>
+                                    <td>{{ event.location_label }}</td>
+                                    <td><span class="risk-badge risk-{{ event.risk_level|lower }}">{{ event.risk_label }}</span></td>
+                                    <td><span class="event-status status-{{ event.status|lower }}">{{ event.status_label }}</span></td>
+                                    <td>{% if event.has_evidence %}<button class="evidence-button" type="button" data-event-detail="{{ event.event_id }}"><img src="{{ url_for('events.evidence_image', event_id=event.event_id) }}" alt="{{ event.robot_name }} {{ event.event_label }} 증거 이미지"><span>상세 보기</span></button>{% else %}<span class="muted">없음</span>{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="events-empty" data-events-empty {% if events %}hidden{% endif %}>{{ icon('log', 24) }}<div><strong>아직 표시할 이벤트가 없습니다.</strong><p>화재·누수·장애물 이벤트를 받으면 위치, 위험도와 증거 이미지 한 장이 표시됩니다.</p></div></div>
+                    <div class="events-note"><span>위험도 <b>상 · 중 · 하</b></span><span>처리 흐름 <b>신규 → 확인중 → 작업요청 → 조치완료</b></span><span>표시 초기화 후에도 <b>통합 이력에 보존</b></span></div>
+                </section>
+
+                <!-- [11단계: 차량 입출차] 이상 이벤트와 분리해 고정 웹캠의 차량 통과 기록을 표시한다. -->
+                <section class="panel events-panel vehicle-access-panel" id="vehicle-access-log"
+                         aria-labelledby="vehicle-access-title"
+                         data-vehicle-access-url="{{ url_for('vehicle_access.list_accesses') }}"
+                         data-clear-url="{{ url_for('dashboard.clear_recent_log', log_name='vehicle-access') }}"
+                         data-csrf-token="{{ csrf_token() }}">
+                    <div class="panel-heading"><h2 id="vehicle-access-title">{{ icon('camera', 18) }} 차량 입출차 로그</h2><div class="log-tools"><span class="event-wait"><b data-vehicle-access-count>{{ vehicle_accesses|length }}</b>건 표시</span><button class="clear-log-button" type="button" data-clear-vehicle-access>표시 초기화</button></div></div>
+                    <div class="event-table-scroll" tabindex="0" role="region" aria-label="차량 입출차 목록 표">
+                        <table class="event-table vehicle-access-table"><caption class="visually-hidden">감지 시각, 입차·출차 구분, 수신 웹캠</caption>
+                            <thead><tr><th scope="col">감지 시각</th><th scope="col">구분</th><th scope="col">웹캠</th></tr></thead>
+                            <tbody data-vehicle-access-rows>
+                            {% for access in vehicle_accesses %}
+                                <tr data-access-id="{{ access.access_id }}">
+                                    <td><time datetime="{{ access.detected_at }}">{{ access.detected_label }}</time></td>
+                                    <td><span class="access-direction direction-{{ access.direction|lower }}">{{ access.direction_label }}</span></td>
+                                    <td>{{ access.camera_name }} <small>{{ access.camera_id }}</small></td>
+                                </tr>
+                            {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="events-empty" data-vehicle-access-empty {% if vehicle_accesses %}hidden{% endif %}>{{ icon('camera', 24) }}<div><strong>아직 차량 입출차 기록이 없습니다.</strong><p>고정 웹캠 인식 토픽을 받으면 입차·출차 내역이 표시됩니다.</p></div></div>
+                    <div class="events-note"><span>표시 초기화 후에도 <b>통합 이력에 보존</b></span></div>
+                </section>
+                <a class="history-shortcut" href="{{ url_for('history.index') }}">{{ icon('clock', 15) }} 통합 이력 검색에서 전체 기록 보기</a>
+            </aside>
         </div>
-
-        <!-- [8단계: 이벤트 로그] DB 최근 이벤트를 먼저 렌더링하고 로그인 API로 3초마다 갱신한다. -->
-        <section class="panel events-panel" id="event-log" aria-labelledby="events-title"
-                 data-events-url="{{ url_for('events.list_events') }}"
-                 data-detail-url-template="{{ url_for('events.event_detail', event_id='__EVENT_ID__') }}"
-                 data-status-url-template="{{ url_for('events.change_status', event_id='__EVENT_ID__') }}"
-                 data-clear-url="{{ url_for('dashboard.clear_recent_log', log_name='events') }}"
-                 data-csrf-token="{{ csrf_token() }}"
-                 data-can-update="{{ 'true' if g.user.role in ('ADMIN', 'OPERATOR') else 'false' }}">
-            <div class="panel-heading"><h2 id="events-title">{{ icon('log', 18) }} 이벤트 로그</h2><div class="log-tools"><span class="event-wait"><b data-event-count>{{ events|length }}</b>건 표시</span><button class="clear-log-button" type="button" data-clear-events>표시 초기화</button></div></div>
-            <div class="event-table-scroll" tabindex="0" role="region" aria-label="이벤트 목록 표">
-                <table class="event-table"><caption class="visually-hidden">발생 시각, 이벤트, 감지 로봇, 좌표, 위험도, 처리 상태, 증거 이미지</caption>
-                    <thead><tr><th scope="col">발생 시각</th><th scope="col">이벤트</th><th scope="col">감지 로봇</th><th scope="col">위치 (좌표)</th><th scope="col">위험도</th><th scope="col">처리 상태</th><th scope="col">증거 이미지</th></tr></thead>
-                    <tbody data-event-rows>
-                    {% for event in events %}
-                        <tr data-event-id="{{ event.event_id }}">
-                            <td><time datetime="{{ event.occurred_at }}">{{ event.occurred_label }}</time></td>
-                            <td><strong>{{ event.event_label }}</strong></td>
-                            <td>{{ event.robot_name }} <small>{{ event.robot_id }}</small></td>
-                            <td>{{ event.location_label }}</td>
-                            <td><span class="risk-badge risk-{{ event.risk_level|lower }}">{{ event.risk_label }}</span></td>
-                            <td><span class="event-status status-{{ event.status|lower }}">{{ event.status_label }}</span></td>
-                            <td>{% if event.has_evidence %}<button class="evidence-button" type="button" data-event-detail="{{ event.event_id }}"><img src="{{ url_for('events.evidence_image', event_id=event.event_id) }}" alt="{{ event.robot_name }} {{ event.event_label }} 증거 이미지"><span>상세 보기</span></button>{% else %}<span class="muted">없음</span>{% endif %}</td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="events-empty" data-events-empty {% if events %}hidden{% endif %}>{{ icon('log', 24) }}<div><strong>아직 표시할 이벤트가 없습니다.</strong><p>화재·누수·장애물 이벤트를 받으면 위치, 위험도와 증거 이미지 한 장이 표시됩니다.</p></div></div>
-            <div class="events-note"><span>위험도 <b>상 · 중 · 하</b></span><span>처리 흐름 <b>신규 → 확인중 → 작업요청 → 조치완료</b></span><span>표시 초기화 후에도 <b>통합 이력에 보존</b></span></div>
-        </section>
-
-        <!-- [11단계: 차량 입출차] 이상 이벤트와 분리해 고정 웹캠의 차량 통과 기록을 표시한다. -->
-        <section class="panel events-panel vehicle-access-panel" id="vehicle-access-log"
-                 aria-labelledby="vehicle-access-title"
-                 data-vehicle-access-url="{{ url_for('vehicle_access.list_accesses') }}"
-                 data-clear-url="{{ url_for('dashboard.clear_recent_log', log_name='vehicle-access') }}"
-                 data-csrf-token="{{ csrf_token() }}">
-            <div class="panel-heading"><h2 id="vehicle-access-title">{{ icon('camera', 18) }} 차량 입출차 로그</h2><div class="log-tools"><span class="event-wait"><b data-vehicle-access-count>{{ vehicle_accesses|length }}</b>건 표시</span><button class="clear-log-button" type="button" data-clear-vehicle-access>표시 초기화</button></div></div>
-            <div class="event-table-scroll" tabindex="0" role="region" aria-label="차량 입출차 목록 표">
-                <table class="event-table vehicle-access-table"><caption class="visually-hidden">감지 시각, 입차·출차 구분, 수신 웹캠</caption>
-                    <thead><tr><th scope="col">감지 시각</th><th scope="col">구분</th><th scope="col">웹캠</th></tr></thead>
-                    <tbody data-vehicle-access-rows>
-                    {% for access in vehicle_accesses %}
-                        <tr data-access-id="{{ access.access_id }}">
-                            <td><time datetime="{{ access.detected_at }}">{{ access.detected_label }}</time></td>
-                            <td><span class="access-direction direction-{{ access.direction|lower }}">{{ access.direction_label }}</span></td>
-                            <td>{{ access.camera_name }} <small>{{ access.camera_id }}</small></td>
-                        </tr>
-                    {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <div class="events-empty" data-vehicle-access-empty {% if vehicle_accesses %}hidden{% endif %}>{{ icon('camera', 24) }}<div><strong>아직 차량 입출차 기록이 없습니다.</strong><p>고정 웹캠 인식 토픽을 받으면 입차·출차 내역이 표시됩니다.</p></div></div>
-            <div class="events-note"><span>표시 초기화 후에도 <b>통합 이력에 보존</b></span></div>
-        </section>
 
         <dialog class="event-dialog" data-event-dialog aria-labelledby="event-detail-title">
             <div class="event-dialog-heading"><div><p class="eyebrow">EVENT DETAIL</p><h2 id="event-detail-title" data-detail-title>이상 이벤트 상세</h2></div><button type="button" class="dialog-close" data-dialog-close aria-label="닫기">×</button></div>

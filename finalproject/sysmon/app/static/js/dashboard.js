@@ -47,12 +47,20 @@ const refreshRobotStatus = async () => {
         if (!response.ok) throw new Error(`status ${response.status}`);
         const data = await response.json();
         data.robots.forEach(renderRobot);
-        document.querySelector('[data-fleet-connection]').textContent = data.fleet_status;
-        document.querySelector('[data-dashboard-mode]').textContent = data.robots.some((robot) => robot.has_status)
+        // [상단 상태 동기화] 헤더와 상태 요약 카드에 같은 최신 값을 표시한다.
+        document.querySelectorAll('[data-fleet-connection]').forEach((element) => {
+            element.textContent = data.fleet_status;
+        });
+        const mode = data.robots.some((robot) => robot.has_status)
             ? "로봇 상태 수신 중" : "로봇 상태 수신 대기";
+        document.querySelectorAll('[data-dashboard-mode]').forEach((element) => {
+            element.textContent = mode;
+        });
     } catch (error) {
         // [조회 실패] 마지막 정상 표시값은 유지하고 화면 갱신 실패만 구분해 알린다.
-        document.querySelector('[data-dashboard-mode]').textContent = "로봇 상태 조회 실패";
+        document.querySelectorAll('[data-dashboard-mode]').forEach((element) => {
+            element.textContent = "로봇 상태 조회 실패";
+        });
     }
 };
 

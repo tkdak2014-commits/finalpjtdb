@@ -148,3 +148,109 @@
 @media (max-width: 1000px) { .dashboard-layout { grid-template-columns: minmax(0, 1fr); }.sidebar { padding: 8px 18px; border-right: 0; border-bottom: 1px solid var(--line); }.sidebar > .sidebar-label, .sidebar-bottom { display: none; }.dashboard-page .side-nav { flex-direction: row; gap: 4px; margin: 0; flex-wrap: wrap; }.side-nav a { min-height: 38px; padding: 8px 10px; font-size: 11px; gap: 6px; }.side-nav a svg { width: 15px; }.side-nav .admin-link { margin-top: 0; border-top-color: transparent; border-radius: 6px; }.connection-badge { display: none; }.nav-marker { display: none; }.dashboard-brand { font-size: 17px; } }
 @media (max-width: 760px) { .monitor-grid { grid-template-columns: minmax(0, 1fr); }.map-viewport { min-height: 270px; }.map-panel { max-height: 415px; }.dashboard-page .topbar { flex-wrap: wrap; gap: 16px; }.topbar-tools { width: 100%; justify-content: flex-end; }.clock-display { display: flex; margin-right: auto; font-size: 10px; }.current-user { padding-left: 0; border: 0; }.dashboard-page h1 { font-size: 23px; }.page-heading { align-items: flex-start; }.mode-label { font-size: 10px; }.dashboard-content { padding: 22px 16px 16px; }.dashboard-footer { flex-wrap: wrap; }.event-dialog-grid { grid-template-columns: minmax(0, 1fr); }.evidence-preview img { min-height: 210px; max-height: 310px; } }
 @media (max-width: 460px) { .robot-grid, .camera-grid { grid-template-columns: minmax(0, 1fr); }.dashboard-brand { font-size: 16px; }.dashboard-page .topbar { padding: 18px 16px; }.brand-symbol { width: 34px; height: 34px; }.mode-label { padding: 6px; }.mode-label svg { display: none; }.heading-description { max-width: 200px; }.camera-viewport, .camera-image, .camera-placeholder { min-height: 175px; height: 175px; }.events-note { padding: 12px; }.role-tag { font-size: 10px; }.current-user { gap: 6px; font-size: 11px; } }
+
+
+/* [한 화면 관제 배치] 상태, 지도, 네 영상, 최근 로그를 동시에 확인한다. */
+.dashboard-layout { grid-template-columns: 176px minmax(0, 1fr); }
+.dashboard-content { padding: 18px 18px 12px; }
+.page-heading { margin-bottom: 14px; }
+.page-heading .heading-description { margin-top: 5px !important; }
+.status-strip { display: grid; grid-template-columns: minmax(185px, .52fr) minmax(0, 2fr); gap: 12px; margin-bottom: 12px; }
+.status-strip .robot-grid { gap: 12px; }
+.system-summary-card { display: flex; flex-direction: column; justify-content: center; padding: 12px 14px; }
+.system-summary-heading { display: flex; align-items: center; gap: 10px; }
+.system-summary-heading > span { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #315374; border-radius: 7px; background: #17304a; color: #74d4ad; }
+.system-summary-heading small { display: block; color: #8fa3ba; font-size: 9px; }
+.system-summary-heading strong { display: block; margin-top: 4px; color: #74d4ad; font-size: 13px; font-weight: 600; }
+.system-summary-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 11px 0 0; padding-top: 9px; border-top: 1px solid var(--line); }
+.system-summary-card dt { color: #8398af; font-size: 9px; }
+.system-summary-card dd { overflow: hidden; margin: 4px 0 0; color: #b8c8da; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.status-strip .robot-card { padding: 10px 12px; }
+.status-strip .robot-icon { padding: 4px; }
+.status-strip .battery-row { margin: 9px 0 8px; }
+.status-strip .battery-row strong { font-size: 22px; }
+.status-strip .battery-outline { width: 52px; height: 15px; }
+.status-strip .robot-details { padding-top: 8px; }
+.status-strip .robot-details dt { font-size: 9px; }
+.status-strip .robot-details dd { margin-top: 4px; font-size: 11px; }
+
+.operations-grid { display: grid; height: 590px; grid-template-columns: minmax(265px, .76fr) minmax(620px, 2fr) minmax(285px, .82fr); gap: 12px; align-items: stretch; }
+.operations-grid > * { min-height: 0; }
+.operations-grid .map-panel { height: 100%; min-height: 0; }
+.operations-grid .map-viewport { min-height: 0; height: auto; margin: 11px 11px 0; }
+.operations-grid .map-legend { gap: 10px; padding: 12px 13px 8px; }
+.operations-grid .panel-footnote { padding: 0 13px 12px; font-size: 9px; line-height: 1.45; }
+.camera-workspace { min-width: 0; min-height: 0; height: 100%; overflow: hidden; }
+.camera-workspace .camera-grid { height: 100%; min-height: 0; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.camera-workspace .camera-card { display: flex; min-height: 0; flex-direction: column; }
+.camera-workspace .camera-card .panel-heading { min-height: 39px; box-sizing: border-box; padding: 9px 11px; }
+.camera-workspace .camera-viewport { flex: 1; width: 100%; min-height: 0; height: auto; aspect-ratio: 16 / 9; }
+.camera-workspace .camera-image { width: 100%; height: 100%; min-height: 0; object-fit: cover; }
+.camera-workspace .camera-placeholder { min-height: 0; padding: 12px; }
+.camera-workspace .camera-footer { min-height: 30px; box-sizing: border-box; padding: 7px 11px; }
+
+.recent-log-column { display: grid; min-width: 0; min-height: 0; height: 100%; overflow: hidden; grid-template-rows: minmax(0, 1.35fr) minmax(0, .85fr) auto; gap: 12px; }
+.dashboard-page .recent-log-column .events-panel { display: flex; min-height: 0; margin-top: 0; overflow: hidden; flex-direction: column; }
+.recent-log-column .panel-heading { padding: 11px 12px; }
+.recent-log-column .panel-heading h2 { font-size: 12px; }
+.recent-log-column .log-tools { gap: 6px; }
+.recent-log-column .event-wait { font-size: 9px; }
+.recent-log-column .clear-log-button { padding: 4px 6px; }
+.recent-log-column .event-table-scroll { flex: 1; min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-gutter: stable; }
+.recent-log-column .event-table thead { position: sticky; top: 0; z-index: 1; }
+.recent-log-column .event-table { width: 100%; min-width: 0; table-layout: fixed; }
+.recent-log-column .event-table th,
+.recent-log-column .event-table td { overflow: hidden; padding: 9px 7px; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.recent-log-column #event-log .event-table th:nth-child(1),
+.recent-log-column #event-log .event-table td:nth-child(1) { width: 34%; }
+.recent-log-column #event-log .event-table th:nth-child(2),
+.recent-log-column #event-log .event-table td:nth-child(2) { width: 38%; }
+.recent-log-column #event-log .event-table th:nth-child(5),
+.recent-log-column #event-log .event-table td:nth-child(5) { width: 28%; }
+.recent-log-column #event-log .event-table th:nth-child(3),
+.recent-log-column #event-log .event-table td:nth-child(3),
+.recent-log-column #event-log .event-table th:nth-child(4),
+.recent-log-column #event-log .event-table td:nth-child(4),
+.recent-log-column #event-log .event-table th:nth-child(6),
+.recent-log-column #event-log .event-table td:nth-child(6),
+.recent-log-column #event-log .event-table th:nth-child(7),
+.recent-log-column #event-log .event-table td:nth-child(7) { display: none; }
+.compact-event-button { max-width: 100%; padding: 0; overflow: hidden; border: 0; background: transparent; color: #f0b18a; font: inherit; font-weight: 600; text-align: left; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.compact-event-button:hover { color: #ffd0af; text-decoration: underline; }
+.recent-log-column .vehicle-access-table { min-width: 0; }
+.recent-log-column .vehicle-access-table th:nth-child(1),
+.recent-log-column .vehicle-access-table td:nth-child(1) { width: 42%; }
+.recent-log-column .vehicle-access-table th:nth-child(2),
+.recent-log-column .vehicle-access-table td:nth-child(2) { width: 23%; }
+.recent-log-column .vehicle-access-table th:nth-child(3),
+.recent-log-column .vehicle-access-table td:nth-child(3) { width: 35%; }
+.recent-log-column .events-empty { min-height: 0; flex: 1; padding: 14px 12px; }
+.recent-log-column .events-empty svg { display: none; }
+.recent-log-column .events-empty p { line-height: 1.5; }
+.recent-log-column .events-note { display: none; }
+.history-shortcut { display: flex; align-items: center; justify-content: center; gap: 7px; min-height: 34px; box-sizing: border-box; border: 1px solid #30465e; border-radius: 7px; background: #122238; color: #a9bdd2; font-size: 10px; }
+.history-shortcut:hover { border-color: #4c6e91; color: #edf5fc; }
+.dashboard-footer { padding-top: 12px; }
+
+/* 노트북 폭에서는 로그만 아래로 옮기고 네 영상은 2×2로 유지한다. */
+@media (max-width: 1390px) {
+    .operations-grid { height: auto; grid-template-columns: minmax(240px, .72fr) minmax(570px, 2fr); }
+    .camera-workspace { height: 560px; }
+    .recent-log-column { grid-column: 1 / -1; height: 300px; grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr); grid-template-rows: minmax(0, 1fr) auto; }
+    .recent-log-column .history-shortcut { grid-column: 1 / -1; }
+}
+@media (max-width: 1000px) {
+    .dashboard-content { padding: 16px; }
+    .status-strip { grid-template-columns: minmax(0, 1fr); }
+    .operations-grid { grid-template-columns: minmax(0, 1fr); }
+    .operations-grid .map-panel { min-height: 430px; }
+    .recent-log-column { grid-column: auto; }
+}
+@media (max-width: 700px) {
+    .page-heading .heading-description { display: none; }
+    .camera-workspace { height: auto; }
+    .status-strip .robot-grid { grid-template-columns: minmax(0, 1fr); }
+    .camera-workspace .camera-grid { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; }
+    .recent-log-column { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: 290px 230px auto; }
+    .recent-log-column .history-shortcut { grid-column: auto; }
+}
