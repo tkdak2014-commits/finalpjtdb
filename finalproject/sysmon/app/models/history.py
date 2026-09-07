@@ -111,26 +111,64 @@ def _robot_status_query(filters):
 def _patrol_query(filters):
     clauses, parameters = _common_conditions(
         filters, "p.started_at", "p.robot_id = ?",
-        ("p.patrol_id", "p.status", "r.name"),
+        ("p.patrol_id", "p.report_id", "p.result", "p.reason", "r.name"),
     )
     if filters["keyword"]:
         pattern = _like_pattern(filters["keyword"].lower())
-        # [관측점 검색] P1~P7 방문값도 순찰 이력의 키워드로 찾을 수 있게 한다.
+        # [관측점 검색] 방문한 waypoint 이름으로도 순찰 결과를 찾을 수 있게 한다.
         clauses[-1] = clauses[-1][:-1] + (
             " OR EXISTS(SELECT 1 FROM patrol_visits pv2 WHERE pv2.patrol_id=p.patrol_id "
-            "AND LOWER(pv2.observation_point) LIKE ? ESCAPE '\\'))"
+            "AND LOWER(pv2.waypoint_id) LIKE ? ESCAPE '\\'))"
         )
         parameters.append(pattern)
     sql = """
         SELECT 'PATROL' AS record_type, p.patrol_id AS record_id,
                p.started_at AS recorded_at, p.robot_id, r.name AS robot_name,
                'PATROL' AS title_code,
-               p.patrol_id || ' · 관측점 ' ||
-               COALESCE((SELECT GROUP_CONCAT(pv.observation_point, ', ')
+               p.patrol_id || ' · 방문 ' || p.completed_visit_count || '/' ||
+               p.planned_visit_count || ' · 관측점 ' ||
+               COALESCE((SELECT GROUP_CONCAT(pv.waypoint_id, ', ')
                            FROM patrol_visits pv WHERE pv.patrol_id=p.patrol_id), '없음') AS summary,
-               NULL AS risk_level, p.status AS status_code, NULL AS event_id,
+               NULL AS risk_level, p.result AS status_code, NULL AS event_id,
                NULL AS actor, 0 AS has_evidence
           FROM patrol_runs p JOIN robots r ON r.robot_id=p.robot_id
+    """ + _where(clauses)
+    return sql, parameters
+
+
+def _patrol_visit_query(filters):
+    clauses, parameters = _common_conditions(
+        filters, "v.arrived_at", "v.robot_id = ?",
+        ("v.visit_id", "v.patrol_id", "v.waypoint_id", "v.result", "v.reason", "r.name"),
+    )
+    sql = """
+        SELECT 'PATROL_VISIT' AS record_type, v.visit_id AS record_id,
+               v.arrived_at AS recorded_at, v.robot_id, r.name AS robot_name,
+               'PATROL_VISIT' AS title_code,
+               v.waypoint_id || CASE WHEN v.patrol_id = '' THEN ''
+                                     ELSE ' · 순찰 ' || v.patrol_id END AS summary,
+               NULL AS risk_level, v.result AS status_code, NULL AS event_id,
+               NULL AS actor, 0 AS has_evidence
+          FROM patrol_visits v JOIN robots r ON r.robot_id=v.robot_id
+    """ + _where(clauses)
+    return sql, parameters
+
+
+def _estop_query(filters):
+    clauses, parameters = _common_conditions(
+        filters, "s.observed_at", "0 = ?",
+        ("s.estop_id", "s.reason", "s.source_id"),
+    )
+    sql = """
+        SELECT 'ESTOP' AS record_type, s.estop_id AS record_id,
+               s.observed_at AS recorded_at, NULL AS robot_id,
+               '안전 제어' AS robot_name, 'ESTOP' AS title_code,
+               CASE WHEN s.active = 1 THEN '비상정지 활성' ELSE '비상정지 해제' END ||
+               CASE WHEN s.reason = '' THEN '' ELSE ' · ' || s.reason END AS summary,
+               NULL AS risk_level,
+               CASE WHEN s.active = 1 THEN 'ACTIVE' ELSE 'CLEARED' END AS status_code,
+               NULL AS event_id, s.source_id AS actor, 0 AS has_evidence
+          FROM estop_history s
     """ + _where(clauses)
     return sql, parameters
 
@@ -174,13 +212,54 @@ def _vehicle_access_query(filters):
     return sql, parameters
 
 
+def _cctv_state_query(filters):
+    clauses, parameters = _common_conditions(
+        filters, "c.observed_at", "0 = ?",
+        ("c.event_id", "c.camera_id", "c.state"),
+    )
+    sql = """
+        SELECT 'CCTV_STATE' AS record_type, c.event_id AS record_id,
+               c.observed_at AS recorded_at, c.camera_id AS robot_id,
+               CASE c.camera_id WHEN 'gate_cam' THEN '게이트 CCTV' ELSE '센터 CCTV' END AS robot_name,
+               'CCTV_STATE' AS title_code,
+               c.state || printf(' · confidence %.2f', c.confidence) AS summary,
+               NULL AS risk_level, c.state AS status_code, NULL AS event_id,
+               NULL AS actor, 0 AS has_evidence
+          FROM cctv_state_events c
+    """ + _where(clauses)
+    return sql, parameters
+
+
+def _patrol_permit_query(filters):
+    clauses, parameters = _common_conditions(
+        filters, "p.received_at", "0 = ?",
+        ("CAST(p.id AS TEXT)", "CAST(p.allowed AS TEXT)"),
+    )
+    sql = """
+        SELECT 'PATROL_PERMIT' AS record_type, CAST(p.id AS TEXT) AS record_id,
+               p.received_at AS recorded_at, 'cam_master' AS robot_id,
+               'CCTV cam_master' AS robot_name,
+               'PATROL_PERMIT' AS title_code,
+               CASE p.allowed WHEN 1 THEN '순찰 허용' ELSE '순찰 제한' END AS summary,
+               NULL AS risk_level,
+               CASE p.allowed WHEN 1 THEN 'ALLOWED' ELSE 'BLOCKED' END AS status_code,
+               NULL AS event_id, NULL AS actor, 0 AS has_evidence
+          FROM patrol_permit_history p
+    """ + _where(clauses)
+    return sql, parameters
+
+
 QUERY_BUILDERS = {
     "EVENT": _event_query,
     "EVENT_CHANGE": _event_change_query,
     "ROBOT_STATUS": _robot_status_query,
     "PATROL": _patrol_query,
+    "PATROL_VISIT": _patrol_visit_query,
+    "ESTOP": _estop_query,
     "HANDOVER": _handover_query,
     "VEHICLE_ACCESS": _vehicle_access_query,
+    "CCTV_STATE": _cctv_state_query,
+    "PATROL_PERMIT": _patrol_permit_query,
 }
 
 

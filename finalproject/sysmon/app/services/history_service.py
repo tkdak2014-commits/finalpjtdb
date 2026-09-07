@@ -13,15 +13,23 @@ RECORD_TYPE_LABELS = {
     "ALL": "전체 기록", "EVENT": "이상 이벤트", "EVENT_CHANGE": "이벤트 처리",
     "ROBOT_STATUS": "로봇 상태", "PATROL": "순찰", "HANDOVER": "로봇 교대",
     "VEHICLE_ACCESS": "차량 입출차",
+    "CCTV_STATE": "CCTV 차량 상태", "PATROL_PERMIT": "순찰 허용 조건",
+    "PATROL_VISIT": "관측점 방문", "ESTOP": "비상정지",
 }
 PATROL_STATUS_LABELS = {
-    "RUNNING": "진행중", "PAUSED": "일시정지", "COMPLETED": "완료",
-    "FAILED": "실패", "CANCELLED": "취소",
+    # [20단계] 순찰 결과는 PatrolReport 계약 enum을 그대로 쓴다.
+    "SUCCEEDED": "완료", "FAILED": "실패", "CANCELED": "취소",
 }
 HANDOVER_STATUS_LABELS = {
     "REQUESTED": "요청", "IN_PROGRESS": "진행중", "COMPLETED": "완료", "FAILED": "실패",
 }
 VEHICLE_DIRECTION_LABELS = {"ENTRY": "입차", "EXIT": "출차"}
+PATROL_VISIT_LABELS = {"SUCCEEDED": "완료", "SKIPPED": "건너뜀", "FAILED": "실패"}
+CCTV_STATE_LABELS = {
+    "ENTERING": "진입 중", "PARKED": "주차 완료",
+    "EXITING": "출차 중", "EXITED": "출차 완료",
+}
+PERMIT_STATUS_LABELS = {"ALLOWED": "순찰 허용", "BLOCKED": "순찰 제한"}
 PER_PAGE = 50
 
 
@@ -98,6 +106,14 @@ def _status_label(record_type, status):
         return PATROL_STATUS_LABELS.get(status, status)
     if record_type == "VEHICLE_ACCESS":
         return VEHICLE_DIRECTION_LABELS.get(status, status)
+    if record_type == "PATROL_VISIT":
+        return PATROL_VISIT_LABELS.get(status, status)
+    if record_type == "ESTOP":
+        return "활성" if status == "ACTIVE" else "해제"
+    if record_type == "CCTV_STATE":
+        return CCTV_STATE_LABELS.get(status, status)
+    if record_type == "PATROL_PERMIT":
+        return PERMIT_STATUS_LABELS.get(status, status)
     return HANDOVER_STATUS_LABELS.get(status, status)
 
 

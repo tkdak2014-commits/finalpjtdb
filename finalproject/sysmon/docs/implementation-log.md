@@ -840,3 +840,374 @@ DB에 저장된 과거 기록을 관제자가 한 화면에서 조건별로 찾�
 - 반응형: 1390px 이하에서는 카메라 영역을 560px로 유지하고 최근 로그 두 패널을 300px 높이의 다음 행에 배치한다. 모바일에서는 다시 내용 기반 높이를 사용한다.
 - 검증 결과: 임시 DB에 이벤트 30건과 차량 입출차 30건을 넣어 1630×1010 브라우저에서 확인했다. 관제 영역과 카메라 영역은 590px, 카메라 카드 한 개는 289px로 유지됐으며 이벤트 표는 278px, 차량 입출차 표는 158px 내부 스크롤 영역을 사용했다. 모든 주기 조회 API가 HTTP 200으로 응답했다.
 - 테스트 범위: 이번 변경은 CSS 배치만 수정했다. 직전 구조 변경 시 실행한 서버 단위·요청 테스트 63개 통과 결과와 별도로 실제 브라우저의 다량 로그 배치를 검증했다.
+
+## 17. 12단계 — ROS adapter 기본 작업 틀 (2026-09-07)
+
+### 목적과 구현 범위
+
+실제 AMR·비전 퍼블리셔를 받기 전에 ROS 연결부를 교체 가능한 경계로 만든다. 이번 단계는 PC 3의 sysmon만 변경하며 공용 메시지 패키지, AMR·비전 코드, launch·YAML, 기존 DB schema는 수정하지 않는다.
+
+### 처리 흐름
+
+```text
+ROS topic → app/ros_adapter.py 등록표·QoS
+→ ROS 메시지별 순수 변환 함수
+→ 기존 robot_service / map_service / camera_service
+→ 기존 SQLite·최신 파일·대시보드
+```
+
+웹 서버와 ROS spin은 서로의 lifecycle을 묶지 않고 `run.py`와 `ros_adapter.py` 두 프로세스로 분리했다. 실제 토픽명이 바뀌면 등록표, 필드가 바뀌면 변환 함수에서 조정한다. 기존 HTTP 입력은 시연·회귀시험 경계로 유지한다.
+
+### 변경 파일과 역할
+
+- `app/ros_adapter.py`: 계약 토픽 등록표, 의존성 점검, RobotStatus·OccupancyGrid·CompressedImage 변환, rclpy 구독 callback.
+- `ros_adapter.py`: `--check` 점검과 별도 ROS spin 진입점.
+- `services/robot_service.py`: 확정 Mission enum의 표시 라벨 추가.
+- `tests/test_ros_adapter.py`: ROS 설치나 실제 publisher 없이 등록·변환 경계를 검증.
+- `README.md`, `docs/code-review-30min.md`: 실행법·완료 범위·코드 탐색 경로 갱신.
+
+### 12단계 당시 차단과 후속 작업
+
+- 당시 `parking_interfaces`가 설치되지 않아 실제 RobotStatus 구독을 시작하지 않았다. 14단계에서 PC 3 빌드가 완료됐다.
+- Stage 12 활성 입력은 RobotStatus 2개, 정적 `/map`, 압축 영상 4개다.
+- costmap·DetectionEvent·EvidenceChunk·CameraState·patrol_allowed는 등록표에 후속 항목으로만 두었으며 구독하지 않는다.
+- `pose_valid=false`와 NaN battery SOC를 현재 DB에 넣으면 의미가 손실되므로 migration 전에는 명시적으로 거부한다.
+- 실제 publisher 연결, QoS 상호운용, 재연결, 처리량, 장비 통합시험은 실행하지 않았다.
+
+### 검증 결과
+
+`tests/test_ros_adapter.py` 6개가 통과했다. 토픽 활성/후속 구분, 의존성 보고, robot1→AMR1 표시 매핑, SOC 변환, pose·enum 거부, OccupancyGrid 원점 yaw·data 변환, 영상 토픽·바이트 변환을 확인했다. 전체 회귀시험은 기존 63개와 신규 6개를 합한 **69개 통과**다.
+
+`requirements.txt`에 PyYAML과 numpy를 선언하고 기존 가상환경에도 설치했다. 이후 `rclpy`, `nav_msgs`, `sensor_msgs` import와 RobotStatus deadline 500 ms를 포함한 QoS 객체 생성을 확인했다. `ros_adapter.py --check`는 `parking_interfaces` 하나만 누락으로 표시하며 예상대로 종료 코드 2를 반환했다. 공용 메시지 패키지 빌드·source, 실제 구독, publisher 송수신, QoS 상호운용 및 장비 통합시험은 **NOT_RUN**이다.
+
+## 18. 13단계 — 부하·다중 접속·SQLite 경합 측정 (2026-09-07)
+
+### 목적과 구현 범위
+
+실제 publisher를 받기 전에 PC 3 sysmon의 route·service·SQLite·파일 저장 경로를 동시 실행해 병목과 실패 응답을 측정한다. 운영 `instance`를 사용하지 않고 실행마다 별도 임시 앱·DB·증적·지도·최신 영상 폴더를 만들며 종료 후 삭제한다. 실제 ROS·다른 PC·네트워크 성능은 범위가 아니다.
+
+### 변경 파일과 역할
+
+- `app/load_test.py`: 부하 설정 검증, 이력 seed, 병렬 writer·reader, write lock 주입, latency·HTTP 상태·자원·DB 무결성 집계.
+- `tools/run_load_test.py`: 부하율·시간·조회자·lock·출력 경로를 지정하는 CLI.
+- `tests/test_load_test.py`: 임시 저장소 격리, 모든 입력·조회 경로, 설정 거부, lock 해제 후 201 복구 검증.
+- `README.md`, `docs/code-review-30min.md`: 실행법, 측정 경계, 현재 검증 결과 갱신.
+
+### 실행 흐름
+
+```text
+임시 폴더 → create_app(임시 DB·파일 경로)
+→ 이력 seed·임시 VIEWER 생성
+→ 상태·지도·영상·이벤트·입출차 writer + 로그인 reader 병렬 실행
+→ 선택 시 BEGIN IMMEDIATE lock 주입
+→ 요청별 HTTP 상태와 p50·p95·p99 수집
+→ integrity_check·foreign_key_check·파일 상태 확인
+→ JSON 보고 → 임시 저장소 삭제
+```
+
+비밀번호·장치 토큰은 실행마다 임의 생성하며 출력하지 않는다. 결과는 `MEASURED`로 기록하고 TBD-MON-001·003이 결정되기 전에는 성능 PASS로 승격하지 않는다.
+
+### 검증 결과
+
+전체 단위·요청 테스트는 기존 69개와 신규 3개를 합한 **72개 통과**다.
+
+기본 측정은 이력 1,000건, 조회자 4명, 조회자당 3 Hz, 상태 총 4 Hz, 지도 1 Hz, 영상 총 20 Hz, 이벤트·입출차 각 1 Hz를 3초간 실행했다. 상태 12건, 지도 3건, 영상 59건, 이벤트 3건, 입출차 3건과 조회 36건이 모두 HTTP 200·201이었고 예외는 0이었다. 대시보드 p95 54.355 ms, 통합 이력 p95 31.552 ms였다. DB integrity `ok`, 외래 키 오류 0, 잔여 `.tmp` 0을 확인하고 임시 저장소 삭제를 확인했다.
+
+LT-13-06은 5.2초 write lock을 주입했다. 상태 저장 한 건이 SQLite 5초 timeout 뒤 HTTP 503으로 구분됐고 최대 지연은 5,016.058 ms였다. lock 해제 후 자동 상태 저장 probe는 HTTP 201, 30.136 ms였으며 DB integrity와 외래 키는 정상이었다.
+
+기본·lock JSON 보고서는 각각 `/tmp/sysmon-stage13-baseline.json`, `/tmp/sysmon-stage13-lock.json`에 생성했다. 이는 임시 로컬 측정 자료다. 실제 여러 PC 접속, ROS publisher, 네트워크·장비 부하와 최종 합격 수치 검증은 **NOT_RUN**이다.
+
+## 19. 14단계 — 공용 메시지 패키지 구현·PC 3 빌드 (2026-09-07)
+
+### 범위와 책임 경계
+
+사용자가 [CR-001](../../docs/change_requests/CR-001_09-07_11-09_parking_interfaces_v1_구현.md)을 승인한 범위에서 프로젝트 루트에 공용 `parking_interfaces` 패키지를 추가했다. `interfaces.md` 계약 v1.0의 필드·타입·상수·enum 번호는 변경하지 않았다. AMR·비전 생산자 코드, launch·YAML, 실제 장비 배포와 publisher 송수신은 변경하거나 실행하지 않았다.
+
+### 변경 내용
+
+- `parking_interfaces/package.xml`, `CMakeLists.txt`: `ament_cmake`와 `rosidl` 빌드 정의.
+- `parking_interfaces/msg/*.msg`: MissionCommand부터 KeepoutStatus까지 계약 메시지 14개.
+- `parking_interfaces/README.md`: PC 3 빌드·source·검증 절차와 가상환경 주의사항.
+- `docs/interfaces.md`, CR-001, sysmon README·코드리뷰: 구현 상태와 단위별 미반영 범위 갱신.
+
+### 검증 결과
+
+첫 빌드는 로그인 시 자동 활성화된 `/home/hun/venvs/rokey_venv`의 Python이 rosidl 실행기를 가로채 `lark`를 찾지 못해 실패했다. 시스템 `/usr/bin/python3`에는 `python3-lark`가 이미 설치돼 있음을 확인했고, 새 의존성을 설치하지 않고 가상환경을 제외한 뒤 CMake Python 경로를 시스템 Python으로 고정해 재빌드했다.
+
+PC 3 `/home/hun/rokey_ws`에서 `colcon build`가 **1 package finished**로 통과했다. source 후 `ros2 pkg prefix`가 설치 경로를 반환했고, `ros2 interface package parking_interfaces`에 메시지 14개가 표시됐다. Python import 14개와 RobotStatus 대표 상수 값을 확인했으며, sysmon `ros_adapter.py --check`는 `rclpy`, `parking_interfaces`, `nav_msgs`, `sensor_msgs`를 모두 찾아 **ready=true, 종료 코드 0**이었다. 실제 publisher·QoS·PC 간 송수신은 **NOT_RUN**이다.
+
+## 20. 15단계 — 가상 ROS 토픽 로컬 DDS 종단시험 (2026-09-07)
+
+### 목적과 책임 경계
+
+실제 PC 1·2·4 publisher를 받기 전에 PC 3의 실제 ROS subscriber, 변환 callback, 기존 service, SQLite·파일 저장과 화면 조회 API를 한 경로로 검증한다. 운영 `ROS_DOMAIN_ID=6`은 도구에서 거부하고 별도 도메인과 localhost discovery만 사용한다. 운영 `instance`와 기본 ROS 로그 폴더도 사용하지 않는다. 상대 개발 단위 코드와 공용 메시지 계약은 변경하지 않았다.
+
+### 변경 내용
+
+- `app/ros_topic_test.py`: 계약 타입·QoS의 가상 publisher 7개 토픽, 임시 앱·ROS 로그·DB, 실제 DDS spin, 저장·화면·무결성 보고.
+- `tools/run_ros_topic_test.py`: 시간·시험 도메인·상태·지도·영상 발행률과 JSON 출력 경로를 지정하는 CLI.
+- `tests/test_ros_topic_test.py`: 운영 도메인·잘못된 설정 거부와 실제 로컬 DDS 종단 저장 검증.
+- `app/ros_adapter.py`: 실제 `PoseWithCovariance.pose.position` 경로 적용, `map` frame 검사, callback 처리 결과 집계.
+- `tests/test_ros_adapter.py`: 실제 계약과 같은 중첩 pose 및 잘못된 frame 거부 검증.
+
+### 검증 결과
+
+도메인 79에서 3초 동안 가상 publisher를 실행했다. 두 RobotStatus 토픽은 각각 13건을 발행해 총 26건이 accepted·저장됐고, `/map` 4건이 accepted·저장됐다. 압축 영상은 네 토픽에서 각 7건을 발행했으며 discovery 전 첫 묶음을 제외한 총 24건이 accepted되고 네 카메라 모두 최신 파일이 생성됐다. VOLATILE 최신 영상은 subscriber 발견 전 데이터를 재전송하지 않으므로 이 차이는 정상이다.
+
+callback rejected·failed는 0건이었다. 최신 로봇은 AMR1·AMR2, DB integrity는 `ok`, 외래 키 오류는 0이었고 상태·지도·카메라 화면 API가 모두 HTTP 200을 반환했다. 시험 종료 후 임시 DB·파일·ROS 로그가 삭제됐다. JSON 결과는 `/tmp/sysmon-stage15-local-dds.json`에 기록했다.
+
+전체 회귀시험은 기존 72개와 신규 2개를 합한 **74개 통과**다. 실제 PC 간 Discovery, 상대 publisher 구현, 네트워크, 실제 주기·timestamp·frame·QoS 상호운용은 **NOT_RUN**이며 이 결과를 실제 통합 PASS로 보고하지 않는다.
+
+## 21. 16단계 — 별도 프로세스 가상 publisher 종단시험 (2026-09-07)
+
+### 목적과 구현 범위
+
+15단계의 한 프로세스 executor 시험을 실제 배치 경계에 가깝게 나눴다. `sysmon` adapter와 가상 publisher를 서로 다른 OS 프로세스로 실행하고 DDS discovery·토픽 매칭·자식 종료 코드·임시 저장 결과를 한 보고서로 확인한다. PC 3 로컬 격리 시험이며 상대 PC의 publisher와 네트워크는 범위가 아니다.
+
+### 변경 파일과 실행 흐름
+
+- `app/ros_process_test.py`: adapter 프로세스를 먼저 준비하고 publisher 프로세스를 실행한 뒤 결과 queue, 종료 코드, 저장소와 API 상태를 집계한다.
+- `tools/publish_virtual_ros_topics.py`: 계약 타입·QoS의 가상 publisher만 유한 시간 실행한다.
+- `tools/run_ros_process_test.py`: 시험 시간·도메인·발행률과 JSON 출력 경로를 받는다.
+- `tests/test_ros_process_test.py`: 일곱 publisher의 subscriber 매칭, 두 자식의 정상 종료와 처리 실패 0을 확인한다.
+
+```text
+부모 시험 프로세스
+├─ sysmon ROS adapter → 임시 SQLite·지도·영상
+└─ 가상 publisher → 격리 DDS domain → adapter
+→ 종료 코드·매칭 수·처리 수·API·DB 무결성 집계
+```
+
+### 검증 결과
+
+도메인 82의 3초 시험에서 RobotStatus 2개, `/map`, 압축 영상 4개가 각각 subscriber 1개와 매칭됐다. adapter·publisher 종료 코드는 모두 0, callback rejected·failed는 0이었다. AMR1·AMR2 상태, 지도 4건, 네 카메라 최신 프레임, 상태·지도·카메라 API HTTP 200, DB integrity `ok`, 외래 키 오류 0과 임시 저장소 삭제를 확인했다. 실제 상대 publisher와 PC 간 시험은 **NOT_RUN**이다.
+
+## 22. 17단계 — AMR별 global/local costmap 수신·분리 표시 (2026-09-07)
+
+### 목적과 책임 경계
+
+`interfaces.md` v1.0의 두 로봇 global/local costmap 네 토픽을 PC 3 sysmon에서 수신한다. 이 단계는 관제 모니터링용 최신 저장과 표시만 담당하며 AMR Nav2 설정·publisher·장애물 판단·주행 안전 로직은 변경하지 않는다. 정적 `/map`과 costmap의 해상도·원점이 다를 수 있어 근거 없는 합성 대신 별도 미리보기로 표시한다.
+
+### 변경 파일과 처리 흐름
+
+- `app/ros_adapter.py`: 네 costmap 토픽을 활성화하고 RELIABLE·VOLATILE·KEEP_LAST(1) QoS와 source별 callback을 연결했다.
+- `app/schema.sql`, `app/database.py`, `app/__init__.py`: `costmap_latest` 네 source 최신 행과 `instance/costmaps` 저장 경로를 추가했다.
+- `app/models/costmap.py`: source별 중복·ID 충돌·과거 시각을 검사하고 최신 한 행을 트랜잭션으로 교체한다.
+- `app/services/costmap_service.py`: OccupancyGrid 공통 검증·PNG 변환을 재사용하고 DB 교체가 확정된 뒤 이전 PNG를 삭제한다.
+- `app/routes/costmaps.py`: 로그인 사용자에게 네 source 상태와 보호된 PNG만 제공한다. 외부 HTTP 입력 경로는 만들지 않았다.
+- `app/templates/index.html`, `app/static/css/dashboard.css`, `app/static/js/costmaps.js`: 정적 지도 위에 선택형 독립 미리보기와 2초 갱신을 추가했다.
+- `app/ros_topic_test.py`, `app/ros_process_test.py`, 두 CLI: `costmap_hz > 0`일 때 네 가상 costmap과 stage 17 판정을 추가했다.
+- `tests/test_costmap.py`, `tests/test_ros_adapter.py`, `tests/test_ros_process_test.py`, `tests/test_database.py`: 저장·교체·보호 조회·11개 토픽·DB 초기화를 검증한다.
+
+```text
+AMR1/AMR2 global/local OccupancyGrid 4개
+→ ROS adapter source 식별·QoS
+→ 공통 격자 검증·PNG 변환
+→ costmap_latest source별 UPSERT + 최신 PNG 한 장
+→ 로그인 API → 정적 지도와 분리된 선택 미리보기
+```
+
+가상 publisher의 타이머 첫 발행과 강제 초기 발행이 같은 밀리초에 겹치면 기존 stage 16 회귀시험에서 간헐적으로 stale가 날 수 있었다. 각 종류가 아직 한 번도 발행되지 않았을 때만 강제 초기 발행하도록 바꿔 시험 순서를 결정적으로 만들었다.
+
+### 검증 결과와 남은 일
+
+도메인 83의 3초 별도 프로세스 시험에서 활성 토픽 11개 모두 subscriber 1개와 매칭됐다. costmap 네 토픽을 각 15건 발행했고 총 44건이 accepted되어 `AMR1:global`, `AMR1:local`, `AMR2:global`, `AMR2:local` 최신 행이 확인됐다. adapter·publisher 종료 코드 0, callback rejected·failed 0, 상태·지도·카메라·costmap API HTTP 200, DB integrity `ok`, 외래 키 오류 0, 임시 저장소 삭제로 `process_pass=true`였다. 결과는 `/tmp/sysmon-stage17-costmap-dds.json`에 기록했다.
+
+전체 회귀시험은 **80개 통과**로 기록한다. 실제 AMR Nav2 publisher, 운영 domain 6, Discovery Server, PC 간 네트워크, 실제 크기·주기·timestamp·frame·QoS 상호운용과 브라우저 실화면 확인은 **NOT_RUN**이다. 다음 18단계는 DetectionEvent·EvidenceChunk이며 AMR 생산자 코드는 상대 개발 단위 범위로 남긴다.
+
+## 23. 18단계 — DetectionEvent·EvidenceChunk·IngestionAck (2026-09-07)
+
+### 목적과 책임 경계
+
+두 AMR이 확정한 사건 메타데이터와 chunk 증적을 PC 3 sysmon이 독립적으로 수신하고 기존 사건 화면·이력에 연결한다. AMR 로컬 bbox 정렬·감지 확정·yaw 제어, 생산자 재전송 구현과 실제 장비는 변경하지 않는다. 관제의 ACK는 저장 결과이며 다음 임무·주행 명령이 아니다.
+
+### 변경 파일과 처리 흐름
+
+- `app/ros_adapter.py`: DetectionEvent 2개와 EvidenceChunk 2개를 활성화하고 RELIABLE·VOLATILE·KEEP_LAST(20) QoS, 계약 enum·ID·pose 변환, 로봇별 IngestionAck publisher를 추가했다.
+- `app/services/detection_service.py`: 소문자 UUID v4, event/risk enum, confidence, `map` frame, `location_valid`, media type, 5 MiB 전체 크기와 64 KiB chunk 제한을 검증한다. 모든 chunk가 모이면 전체 크기·SHA-256·실제 이미지 형식을 확인한다.
+- `app/models/detection.py`: Detection 보완 메시지 영수증, evidence 조립 상태와 chunk를 저장한다. event/evidence 어느 쪽이 먼저 와도 완료 뒤 연결하며, 완료·거부 후 chunk BLOB은 NULL로 비운다.
+- `app/schema.sql`, `app/database.py`: 기존 사건에 confidence·location_valid·evidence_id를 추가하고 `detection_event_messages`, `evidence_ingestions`, `evidence_chunks`를 만든다. 기존 DB는 열·인덱스만 추가하며 이력을 삭제하지 않는다.
+- `app/services/event_service.py`: 계약 enum의 LIGHTING과 FACILITY_DAMAGE 표시 라벨을 추가했다.
+- `app/ros_topic_test.py`, `app/ros_process_test.py`, 시험 CLI: 역순 chunk 사이에 event를 보내고 ACK 수신·저장·잔여 BLOB을 보고한다.
+- `tests/test_detection_ingestion.py`, `tests/test_ros_adapter.py`, `tests/test_ros_process_test.py`, `tests/test_database.py`: 독립 도착, 보완 메시지, 중복·충돌, 무효 위치, 잘못된 hash 거부, 기존 API 표시와 DDS 왕복을 검증한다.
+
+```text
+DetectionEvent ───────────────┐
+                             ├→ event_id/evidence_id 확인 → event_evidence 연결
+EvidenceChunk 0..N → 누락 ACK ┘
+→ 전체 크기·SHA-256·PNG/JPEG 검증 → 원자 파일 저장
+→ STORED/DUPLICATE/INCOMPLETE/REJECTED IngestionAck
+```
+
+같은 event_id에 새 message_id가 오면 기존 처리 상태를 보존하면서 보완 메타데이터를 최신화하고 모든 message_id 영수증은 별도 테이블에 남긴다. `location_valid=false`이면 pose 값이 NaN이어도 좌표를 저장하지 않는다. EVENT_UNKNOWN과 RISK_UNKNOWN은 관제 사건 의미가 확정되지 않은 값이므로 REJECTED ACK 대상이며 임의의 사건·위험도로 바꾸지 않는다.
+
+### 검증 결과와 남은 일
+
+도메인 84의 3초 별도 프로세스 시험에서 활성 입력 15개가 모두 subscriber 1개와 매칭되고 두 IngestionAck publisher도 각각 subscriber 1개와 매칭됐다. DetectionEvent 12건과 완성 증적 12건이 저장·연결됐고, 미완료 증적과 완료 뒤 chunk BLOB은 0건이었다. callback rejected·failed 0, adapter·publisher 종료 코드 0, 상태·지도·카메라·costmap·event API HTTP 200, DB integrity `ok`, 외래 키 오류 0, 임시 저장소 삭제로 `process_pass=true`였다. JSON 결과는 `/tmp/sysmon-stage18-detection-dds.json`에 기록했다.
+
+운영 DB를 직접 변경하지 않고 복사본으로 기존 스키마 migration을 실행해 신규 테이블·열 생성, integrity `ok`, 외래 키 오류 0을 확인했다. 전체 단위·요청·격리 DDS 회귀시험은 **88개 통과**다. 실제 AMR producer, 운영 domain 6, Discovery Server, PC 간 네트워크, 실제 5 MiB 전송 부하·재시작 중 미완료 chunk 복구와 브라우저 실화면은 **NOT_RUN**이다. CR-001의 AMR·비전 공용 패키지 반영 상태는 계속 추적한다.
+
+## 24. 19단계 — CameraState·순찰 허용 조건 수신·표시 (2026-09-07)
+
+### 목적과 책임 경계
+
+PC 4 cam_master가 확정한 CCTV 차량 상태(`CameraState`)와 순찰 허용 조건(`patrol_allowed` Bool)을 PC 3 sysmon이 수신·보존·표시한다. 상태 확정 알고리즘과 threshold는 비전 담당 책임이며 관제는 관측 결과만 기록한다. `patrol_allowed`는 판단 조건이고 주행·정지 명령이 아니므로 관제는 이 값으로 명령을 만들지 않는다.
+
+### 변경 파일과 처리 흐름
+
+- `app/schema.sql`: `cctv_state_events`(원문 `event_id` PK, `camera_id` CHECK gate_cam/center_cam, `state` CHECK ENTERING/PARKED/EXITING/EXITED, confidence 0~1), 순찰 허용 최신 1행 `patrol_permit_latest`, 변경 시점만 남기는 `patrol_permit_history`와 조회 인덱스 2개를 추가했다.
+- `app/models/cctv.py`: `event_id` 재전송·충돌 판정과 CameraState 저장, permit 최신 UPSERT와 변경분 이력 INSERT를 한 트랜잭션에서 처리한다.
+- `app/services/cctv_service.py`: 계약 enum·카메라·confidence·시각을 검증하고, permit은 Bool 이외 값을 거부한다. 화면용으로 permit 최근 수신 시각과 stale 경고를 계산한다.
+- `app/routes/cctv.py`: 로그인 사용자용 `GET /api/cctv/status`만 둔다. 이 경로의 수신은 ROS 전용이라 장치 HTTP 입력 경로를 만들지 않았다.
+- `app/routes/dashboard.py`, `app/templates/index.html`, `app/static/js/cctv.js`: 상태 카드에 순찰 허용 조건·permit 최근 수신·최근 CameraState를 표시하고 주기 갱신한다.
+- `app/models/history.py`, `app/services/history_service.py`: 통합 이력 검색에 `CCTV_STATE`, `PATROL_PERMIT` 기록 종류와 한글 라벨을 추가했다.
+- `app/ros_adapter.py`: `/vision/cctv/gate_event`, `/vision/cctv/center_event`, `/vision/cctv/patrol_allowed` 구독을 활성화해 활성 토픽이 18개가 됐다.
+- `app/ros_topic_test.py`, `app/ros_process_test.py`, `tools/publish_virtual_ros_topics.py`, `tools/run_ros_process_test.py`, `tools/run_ros_topic_test.py`: 가상 CCTV 발행(`--cctv-hz`)과 종단시험을 추가했다.
+- `tests/test_cctv.py`: 저장·라벨, 재전송·충돌 구분, 계약 위반 거부, permit 반복 수신 시 변경분만 기록, 로그인 보호와 모니터 경계, Bool 아닌 값 거부 6개를 검증한다.
+
+```text
+CameraState(gate_cam·center_cam) → enum·카메라·confidence·시각 검증
+→ event_id 재전송/충돌 판정 → cctv_state_events 저장 → 상태 카드·통합 이력
+
+Bool patrol_allowed → 최신 1행 UPSERT (반복 수신은 시각만 갱신)
+→ 값이 바뀐 시점만 patrol_permit_history 추가 → 순찰 허용 조건 표시
+```
+
+### 검증 중 발견해 고친 문제
+
+1. **permit 수신 유실**: `patrol_allowed` 구독 큐가 계약 표기대로 KEEP_LAST(1)이어서, 영상·costmap callback을 처리하는 동안 도착한 Bool이 최신값으로 덮여 변경이 기록되지 않았다. 3초 시험에서 11건을 발행해도 adapter가 처리한 것은 1건이었다. 발행용 프로필은 계약대로 depth 1로 유지하고, 수신 프로필만 depth 10으로 분리했다(`_qos_profiles()`의 `patrol_allowed_writer`/`patrol_allowed`). 큐 깊이는 수신 측 자원 설정이라 발행 계약과 충돌하지 않는다. 같은 조건에서 permit 이력이 1건에서 7건으로 늘었다.
+2. **별도 프로세스 시험이 실행 순서에 좌우됨**: `fork`는 부모가 이미 만든 rclpy·DDS 스레드를 자식에서 되살리지 못해, 같은 프로세스에서 `test_ros_topic_test`를 먼저 실행하면 adapter 자식이 준비되지 않았다. rclpy를 쓰지 않은 서버 프로세스에서 자식을 만드는 `forkserver`로 바꾸고 준비 대기를 30초로 늘렸다.
+3. **수신 구간이 자식 시작 지연만큼 짧아짐**: adapter가 고정 시간만 spin하면 자식 시작이 늦은 만큼 ACK 왕복 같은 늦은 메시지를 놓쳤다. 부모가 publisher 종료 후 stop 신호를 보내고 adapter는 1초 단위로 확인하며 수신한다. 신호 확인 간격을 0.1초로 잘게 나누면 처리량이 절반으로 떨어져 1초로 두었다.
+4. **시험 CLI 인자 비대칭**: `tools/run_ros_topic_test.py`에 `--costmap-hz`, `--detection-hz`, `--cctv-hz`가 없어 로컬 종단시험으로 CCTV를 켤 수 없었다. 별도 프로세스 CLI와 인자를 맞췄다.
+5. 별도 프로세스 시험의 관측 창이 1.5~2초로 짧아 발견 지연에 취약해 2.5~3초로 늘렸다.
+
+### 검증 결과와 남은 일
+
+- ROS를 source하지 않은 `.venv`에서 전체 **97개 통과**(ROS 격리시험 5개는 rclpy 없음으로 skip).
+- `/opt/ros/jazzy`와 `rokey_ws`를 source한 뒤 전체 **97개 통과를 3회 연속** 확인했다. 이전에는 실행 순서에 따라 4개 오류 또는 1~2개 실패가 났다.
+- 로컬 종단시험(domain 78, 3초, cctv 4 Hz): CameraState 7건, permit 변경 이력 7건, costmap 4종, DetectionEvent 12건으로 `local_pass=true`.
+- 별도 프로세스 시험(domain 85, 3초, cctv 4 Hz): 활성 입력 18개 매칭, CameraState 양쪽 카메라 수신, permit 최신값·이력 저장, `process_pass=true`를 3회 연속 확인했다.
+- **NOT_RUN**: 실제 cam_master 발행, 운영 domain 6, PC 간 네트워크, 브라우저 실화면 확인, permit 1.5초 미수신 경고의 실장비 확인.
+- 남은 일: 20단계 PatrolVisit·PatrolReport·Keepout·E-stop 모니터링, `CameraState`의 PARKED·EXITING을 차량 입출차 로그와 어떻게 연결할지 확정(현재 입출차는 HTTP 수신 경로만 사용).
+
+## 25. 이벤트 범위를 화재·누수·장애물 3종으로 제한 (2026-09-07)
+
+- 목적: 관제 화면의 이상 이벤트 범위를 합의대로 화재·누수·장애물로 되돌린다. 18단계에서 계약 enum을 그대로 수용하면서 조명 이상·시설물 파손까지 저장·표시되고 있었다.
+- 변경 파일: `app/services/event_service.py`(허용 목록·오류 문구), `app/services/detection_service.py`(허용 목록·거부 문구), `app/ros_topic_test.py`(가상 publisher가 세 종류를 번갈아 발행), `tests/test_detection_ingestion.py`(기존 3곳의 종류·라벨 기대값 수정, 범위 밖 거부 시험 1개 추가).
+- 표시 라벨 표에는 조명 이상·시설물 파손을 남겼다. 범위 축소 전에 저장된 이력을 화면과 통합 이력에서 읽을 때 필요하다.
+- 계약 문서의 enum 정의·번호는 바꾸지 않았다. 범위 밖 값은 저장하지 않고 `IngestionAck.REJECTED`로 회신한다.
+- **미해결**: `interfaces.md` 327행의 재전송 종료 조건은 STORED·DUPLICATE뿐이라 REJECTED만으로는 AMR 재전송이 멈추지 않는다. 처리 방안은 [CR-002](../../docs/change_requests/CR-002_09-07_15-40_관제_이벤트_범위_3종_제한.md)에서 AMR 담당과 확정한다.
+- 검증: ROS를 source한 전체 시험 **98개 통과**. 도메인 87의 별도 프로세스 DDS 시험에서 DetectionEvent 12건 저장·거부 0건으로, 가상 publisher가 범위 안 종류만 발행하는 것을 확인했다.
+- 남은 일: 범위 축소 전에 실제 DB에 저장된 조명 이상 182건·시설물 파손 182건의 처리(보존 또는 삭제)는 사용자 결정 대기 중이다.
+
+## 26. 20단계 — 순찰 방문·보고와 Keepout·E-stop 모니터링 (2026-09-07)
+
+### 목적과 책임 경계
+
+두 AMR이 보고하는 관측점 방문·순찰 결과와 안전 상태(Keepout 적용, E-stop)를 수신·보존·표시한다. 관제는 관측과 기록만 하며 임무·권한·비상정지를 발행하지 않는다. E-stop 해제는 이동 명령이 아니고, Keepout 변경은 각 로봇 costmap parameter API가 수행한다.
+
+### 변경 파일과 처리 흐름
+
+- `app/schema.sql`, `app/database.py`: 예약 구조였던 `patrol_runs`·`patrol_visits`를 계약 구조로 바꾸고 `keepout_latest`, `estop_latest`, `estop_history`를 추가했다(25개 테이블). 예약 표에 기록이 없을 때만 자동 변환하고, 값이 있으면 변환하지 않고 시작을 중단한다.
+- `app/models/patrol.py`: 방문·보고의 재전송·충돌 판정과 저장, 보고가 없는 순찰 조회.
+- `app/models/safety.py`: Keepout 로봇별 최신 1행 유지, E-stop 최신 갱신과 활성·해제 변경 시점만 이력화. 늦게 도착한 과거 상태는 무시한다.
+- `app/services/patrol_service.py`: UUID v4·시각·enum·waypoint 검증, `map` frame 강제, 실패·취소 보고의 원인 코드·설명 필수 검사, 완료 방문 수 상한 검사, UNREPORTED 계산.
+- `app/services/safety_service.py`: Keepout·E-stop 계약 검증과 화면 상태 계산. 미수신·정상·활성을 구분하고 오래된 수신은 `stale`로 표시한다.
+- `app/routes/patrol.py`: 로그인 전용 `GET /api/patrol/status`, `GET /api/safety/status`. 수신은 ROS 전용이라 장치 입력 경로를 만들지 않았다.
+- `app/ros_adapter.py`: 방문·보고·Keepout 각 2개와 `/control/estop`을 더해 활성 구독이 25개가 됐다. Keepout·E-stop은 TRANSIENT_LOCAL로 받아 늦게 붙어도 마지막 상태를 얻는다. 방문·보고에는 `IngestionAck`을 회신한다.
+- `app/models/history.py`, `app/services/history_service.py`, 화면: 통합 이력에 `PATROL_VISIT`·`ESTOP` 기록 종류를 추가하고 순찰 결과 라벨을 계약 enum으로 바꿨다. 상태 요약 줄에 순찰·안전 카드를 추가했다(`static/js/patrol.js`, 2초 갱신).
+- `app/ros_topic_test.py`, `app/ros_process_test.py`, 시험 CLI 3개: `--patrol-hz`, `--safety-hz`로 방문·보고·Keepout·E-stop을 발행하고 저장·화면 결과를 판정한다.
+
+```text
+PatrolVisit ─→ 검증 → patrol_visits 저장 → IngestionAck(STORED/DUPLICATE/REJECTED)
+PatrolReport ─→ 검증 → patrol_runs 저장 → IngestionAck
+              보고가 없는 patrol_id는 저장하지 않고 화면에서 UNREPORTED로 계산
+
+KeepoutStatus ─→ 로봇별 최신 1행 (되돌리기 실패는 경고 표시)
+EStopState ───→ 최신 1행 + 활성·해제가 바뀐 시점만 이력
+```
+
+### 설계 이유
+
+방문은 보고보다 먼저 도착할 수 있어 순찰 실행 행을 참조하지 않는다. 계약대로 결과가 오지 않은 순찰은 관제가 대필하지 않고 방문 기록만으로 UNREPORTED를 계산한다. E-stop은 2 Hz 반복 발행이라 최신 행만 갱신하고 값이 바뀐 시점만 남겨 이력이 무한히 늘지 않게 했다. permit과 같은 구조다.
+
+### 검증 결과와 남은 일
+
+- `.venv` 전체 시험 **107개 통과**(ROS 격리시험 6개 skip). 새 시험 8개는 저장·라벨, UNREPORTED, 재전송·충돌, 계약 위반 거부(잘못된 enum·빈 waypoint·UUID·frame·시간대, 원인 없는 실패 보고, 계획보다 많은 완료 수), Keepout 최신 1행과 되돌리기 실패 경고, E-stop 변경분만 기록, 미수신과 해제 구분, 로그인 보호와 조회 전용 경계를 확인한다.
+- ROS를 source한 전체 시험 **107개 통과를 2회 연속** 확인했다.
+- 도메인 86의 별도 프로세스 시험에서 활성 입력 21개 매칭, 방문·보고 저장, Keepout 두 로봇 상태, E-stop 최신값과 변경 이력, 화면 API 8종 HTTP 200으로 `process_pass=true`였다. 증적 재조립은 18단계 시험이 담당하도록 이 시험에서는 detection을 끄고 순찰·안전에 집중했다.
+- 설계 산출물 `design/db-schema`를 25개 테이블로 다시 만들었고, 행 수는 그릴 때마다 실제 DB에서 읽도록 바꿨다.
+- **NOT_RUN**: 실제 AMR·Safety Arbiter 발행, 운영 domain 6, PC 간 네트워크, 브라우저 실화면 확인.
+- 남은 일: 21단계 PC 1·2·3·4 통합시험. 그 전에 지도·costmap 셀 수 제한(현재 100만)과 영상 5 Hz 처리 제한 미구현을 정리해야 한다.
+
+## 27. 상태 줄 재배치와 한 화면 밀도 조정 (2026-09-07)
+
+- 목적: 20단계 카드가 늘어나면서 상태 줄이 2열 그리드에 3개가 들어가 로봇 카드가 185px 열로 밀렸고, 글자가 세로로 쪼개지며 오른쪽이 비었다.
+- 변경 파일: `app/static/css/dashboard.css`.
+- 배치: 상태 줄을 같은 폭 2열로 바꾸고 로봇 카드 묶음에 `grid-column: 1 / -1`과 `order: -1`을 줘서 위 줄 전체를 쓰게 했다. 아래 줄에 시스템 상태와 순찰·안전 카드를 나란히 놓았다.
+- 밀도: 제목·상태 카드·로봇 카드의 여백과 글자 크기를 줄이고, 요약 항목을 1400px 이상에서 한 줄(5열)로 배치했다. 본문 높이는 590px에서 505px로 줄였다.
+- 검증: 임시 DB·임시 서버(5099)와 실제 브라우저에서 1680×1000 기준 문서 높이 1179px → **1000px로 화면에 정확히 들어가는 것**을 확인했다. 지도 365px, 카메라 176px를 유지하며 카드 안 글자 넘침은 0건이다. 1366×768과 1000×900에서도 가로 스크롤이 없고 좁은 폭에서는 요약 항목이 3열·2열로 줄어든다. 확인용 임시 서버와 임시 DB는 삭제했다.
+- 전체 단위·요청 시험 107개 통과를 유지한다.
+- 추가 압축(2026-09-07): 요약 항목의 마지막 칸이 한 줄을 다 쓰던 `grid-column: 1 / -1`을 상태 줄에서 해제해 다섯 항목을 한 줄에 넣고, 로봇 카드와 요약 카드의 여백·글자를 더 줄였다. 상태 줄 261px → **201px**, 카메라 화면 176px → **207px**, 지도 365px → **428px**로 바뀌었고 1680×1000에서 문서 높이는 그대로 1000px이다.
+
+## 28. 실제 지도 크기 수용과 표시용 영상 5 Hz 제한 (2026-09-07)
+
+- 목적: 21단계 통합 전에 실제 발행 데이터에서 바로 걸릴 두 지점을 정리한다.
+- **지도 크기**: `MAP_MAX_CELLS`가 100만이라 100m×100m·5cm 지도(400만 셀)를 거부했다. 제한을 1600만으로 올리고, 화면용 PNG만 `MAP_MAX_IMAGE_SIDE`(기본 2000) 이하로 솎아 저장한다. `map_service.downsample_grid()`는 한 줄씩 슬라이스로 솎아 큰 격자에서도 처리 시간을 짧게 유지한다. costmap도 같은 함수를 쓴다.
+  - 좌표 변환에 쓰는 `resolution`·`width`·`height`·`origin`은 원본 값을 그대로 저장한다. 화면은 원본 크기 viewBox에 이미지를 늘려 그리므로 로봇 마커 위치는 달라지지 않는다.
+  - 솎기는 최근접 표본이라 이미지의 얇은 장애물이 일부 빠질 수 있다. 판단용 원본 격자는 로봇 쪽 costmap이며 관제 화면은 관측용이다.
+- **표시용 영상 5 Hz**: `interfaces.md` 2.5절의 "sysmon adapter는 표시용으로 최대 5 Hz까지만 처리한다"가 구현돼 있지 않아 오는 대로 파일을 교체했다. adapter의 카메라 callback에 토픽별 최소 간격(`CAMERA_MAX_HZ`, 기본 5 Hz)을 두고 초과분은 `camera_frame_throttled`로만 세고 버린다.
+- 변경 파일: `app/__init__.py`(설정 3개), `app/services/map_service.py`, `app/services/costmap_service.py`, `app/ros_adapter.py`, `tests/test_map.py`, `tests/test_ros_process_test.py`.
+- 검증: 전체 시험 **108개 통과**(ROS source 후). 새 시험은 40×30 격자를 최대 변 10으로 제한했을 때 DB에는 40×30이 남고 PNG 헤더는 10×8이 되는 것, 솎기 함수의 표본 위치와 제한 이하 격자의 무변경을 확인한다. 별도 프로세스 시험에서는 10 Hz 발행 시 `camera_frame_throttled`가 1건 이상 생기는 것을 확인한다.
+- 실측: 도메인 93에서 12 Hz로 3초 발행했을 때 카메라 4대 기준 **저장 48건 / 버림 75건**으로 5 Hz 근처를 유지했다.
+- 남은 일: 실제 주차장 지도의 크기·해상도를 AMR 담당에게 확인해 `MAP_MAX_IMAGE_SIDE` 값을 최종 결정한다. 발행 측이 모니터링용 영상을 5 Hz로 낮추기로 하면 adapter 제한은 이중 안전장치로 남는다.
+
+## 29. ROS adapter 기능별 파일 분리 (2026-09-07)
+
+- 목적: `app/ros_adapter.py`가 1,086줄이 되어 AGENTS.md의 "기능을 한 파일에 몰아넣지 않는다" 기준에서 벗어났다. 동작은 그대로 두고 파일만 나눈다.
+- 구성:
+  - `app/ros/errors.py`(9줄): 공통 예외 두 개
+  - `app/ros/registry.py`(220줄): 구독 등록표 25개와 계약 enum·토픽 대응표, `active_subscriptions`, `dependency_report`
+  - `app/ros/payloads.py`(363줄): ROS 메시지 → 서비스 입력 변환 함수 11개. ROS 노드 없이 부를 수 있는 순수 함수다
+  - `app/ros/qos.py`(78줄): interfaces.md 5절 QoS 계약
+  - `app/ros/node.py`(470줄): 구독 배선, callback 12개, IngestionAck 회신, `spin`
+  - `app/ros_adapter.py`(65줄): 위 모듈의 이름을 모아 노출하는 진입점
+- 기존 코드와 시험은 계속 `app.ros_adapter`에서 같은 이름을 가져다 쓴다. `tools/`, `ros_adapter.py`, `ros_topic_test.py`, `ros_process_test.py`, 시험 파일은 한 줄도 고치지 않았다.
+- 옮기면서 상대 import 경로를 `..models`, `..services`로 맞추고 등록표 이름 4개를 `node.py` import에 추가했다. 로직 변경은 없다.
+- 검증: `.venv` 전체 시험 108개 통과, ROS를 source한 전체 시험 **108개 통과를 2회 연속** 확인했다. `ros_adapter.py --check`도 활성 25개·대기 0개로 이전과 같다.
+
+## 30. CCTV 상태를 차량 입출차 화면에 연결 (2026-09-07)
+
+- 결정: 차량이 실제로 드나드는 지점은 게이트다. **게이트 CCTV의 진입·출차 완료만 입출차 기록으로 저장**하고, 센터 CCTV의 주차 완료·출차 중은 주차장 안 상태라 `cctv_state_events`에만 보존한다. 네 상태를 모두 입차/출차로 저장하면 차량 한 대가 입차 2건·출차 2건으로 세어진다.
+- 화면에서는 둘을 합쳐 보여준다. `vehicle_access_service.recent_accesses()`가 게이트 통과 기록과 센터 상태를 시각순으로 합쳐 같은 열 구조로 돌려주므로, 차량 입출차 목록에 `입차 / 주차 완료 / 출차 중 / 출차`가 모두 나타난다. 사용자별 표시 초기화 기준은 두 원본 모두 수신 시각으로 적용한다.
+- 변경 파일: `app/services/cctv_service.py`(게이트 상태 → 입출차 변환과 저장), `app/models/cctv.py`(`list_center_states`), `app/services/vehicle_access_service.py`(목록 합치기), `tests/test_cctv.py`.
+- ROS 경로로 들어온 CameraState가 입출차 목록을 채우므로, 시연에서 입출차만 HTTP 도구로 따로 넣지 않아도 된다. HTTP 수신 경로는 그대로 남는다.
+- 시험 안정화: 별도 프로세스 시험 사이에 DDS 정리 대기 1.5초를 넣고, 판정 실패 시 보고서 핵심을 그대로 출력하도록 했다. 19·20단계 시험은 증적 재조립을 18단계에 맡기고 detection을 끄며, 표시용 영상 5 Hz 제한은 다른 토픽 부하가 적은 전용 시험으로 옮겼다(부하가 크면 BEST_EFFORT 영상이 DDS 단계에서 먼저 밀려 처리 상한을 관측할 수 없다).
+- 검증: `.venv` 112개 통과, ROS를 source한 전체 **112개 통과를 2회 연속** 확인했다.
+
+## 31. 위치 무효 상태 수용과 마지막 유효 위치 표시 (2026-09-07)
+
+- 문제: adapter가 `pose_valid=false`인 RobotStatus를 통째로 거부해 로봇이 위치를 잃으면 배터리·임무·연결 상태까지 들어오지 않았다. 관제 권장안의 "현재 유효 pose와 마지막 유효 pose를 서로 다른 마커로 표시"와도 어긋났다.
+- 저장: `robot_latest_status`와 `robot_status_history`에 `pose_valid`, `last_valid_pose_at` 열을 추가했다. 기존 행은 좌표가 유효한 상태로만 저장돼 있어 기본값 1로 채운다(`_migrate_pose_validity`, 열 추가만 하므로 이력을 지우지 않는다).
+- 수신: `pose_valid=false`면 좌표를 저장하지 않고(NULL) 배터리·임무·연결 상태와 마지막 유효 시각만 남긴다. 무효 좌표를 현재 위치처럼 표시하지 않는다.
+- 표시: 카드의 위치 문구가 `마지막 유효 map (12.00, 8.00)`으로 바뀌고, 지도에서는 마지막 유효 위치를 속이 빈 점선 마커와 다른 문구로 그린다. 좌표 경고에도 "현재 위치가 무효" 문구를 추가했다. 최근 경로 조회는 유효 좌표만 사용하므로 그대로다.
+- 변경 파일: `app/schema.sql`, `app/database.py`, `app/models/robot.py`, `app/services/robot_service.py`, `app/services/map_service.py`, `app/ros/payloads.py`, `app/static/js/map.js`, `app/static/css/dashboard.css`, `tests/test_robot_status.py`, `tests/test_ros_adapter.py`.
+- 검증: `.venv` 114개 통과, ROS를 source한 전체 **114개 통과**. 새 시험은 무효 위치 수신 시 좌표가 NULL로 남고 배터리·임무는 유지되며 카드가 마지막 유효 위치를 보여주는 것, adapter 변환이 좌표를 비우고 `last_valid_pose_at`을 채우는 것을 확인한다.
+- 남은 일: 관제 판단 토픽(`/control/operational_state`·`operational_event`)이 확정되면 STALE·UNREPORTED 판정 주체를 관제로 옮기고 현재 계산은 대체 표시로 남긴다.
+
+## 32. 제품 코드와 시험 코드 폴더 분리 (2026-09-07)
+
+- 목적: 코드리뷰 기준이 "실제 솔루션에 적용될 코드(테스트용 코드 제외)"라, 시험 하네스가 제품 패키지 안에 있으면 범위가 흐려진다.
+- 이동: `app/ros_topic_test.py`, `app/ros_process_test.py`, `app/load_test.py` → **`testkit/`**. 가상 ROS publisher, 격리 DDS 종단시험, 부하 측정처럼 실제 서비스 실행에 쓰지 않는 코드만 담는다.
+- 이동한 파일의 상대 import를 `app.` 절대 경로로 바꾸고, `tests/` 3개와 `tools/` 4개의 import 경로를 갱신했다. 제품 코드는 `testkit/`을 import하지 않는다.
+- 결과 구조: 리뷰 대상은 `run.py`, `ros_adapter.py`, `app/`(routes·services·models·ros·templates·static)이고, `testkit/`·`tests/`·`tools/`는 검증·시연용이다. README에 폴더 구분 표를 추가했다.
+- 검증: `.venv` 114개 통과, ROS를 source한 전체 **114개 통과**. 시험 CLI(`tools/run_ros_topic_test.py`)도 `local_pass=true`로 이전과 같이 동작한다.
+
+## 33. 증적 지연·누락 표시와 관제 판단 토픽 요청서 (2026-09-07)
+
+- 배경: 관제 설계 제안(Sysmon 팀 소통사항 3.1~3.7)을 현재 구현과 대조했다. 3.3 STALE·UNREPORTED 분리, 3.6 TRANSIENT_LOCAL 복원, 3.7 Dashboard 제외 목록은 이미 같은 방식이었다.
+- **증적 지연·누락(3.5 일부) 반영**: 저장값 `INCOMPLETE`·`STORED`·`REJECTED`는 그대로 두고, 조립이 끝나지 않은 경과 시간으로 화면에서 `DELAYED`(기본 30초)·`MISSING`(기본 300초)을 계산한다. 관제가 없는 결과를 만들어 저장하지 않는다는 원칙을 지키기 위해 파생 표시로만 구분했다.
+  - 변경 파일: `app/__init__.py`(임계값 2개), `app/models/event.py`(목록·상세 조회에 조립 상태 join), `app/services/event_service.py`(`evidence_state`, 라벨), `app/static/js/events.js`·`dashboard.css`(주황 표시), `tests/test_detection_ingestion.py`.
+- **[CR-003](../../docs/change_requests/CR-003_09-07_18-10_관제_판단_토픽_2종_도입.md) 작성**: `/control/operational_state`·`/control/operational_event` 도입에 동의하되 21단계 이후 반영을 제안했다. 새 메시지 두 개가 계약 v1.1과 네 PC 재빌드를 요구하고, 현재 자체 계산 중인 STALE·UNREPORTED·CCTV timeout과 판단 주체가 겹치기 때문이다. 필드명 `event_id` 충돌과 전환 시점도 확정 대상으로 적었다.
+  - 같은 요청서에 PostgreSQL 전환은 13단계 측정치를 근거로 운영 전환 과제로 남기고, durable spool은 계약 3.8절의 생산자 재전송과 중복이라는 검토 결과를 함께 남겼다.
+- 검증: `.venv` 115개 통과, ROS를 source한 전체 시험도 통과. 새 시험은 조각이 하나만 도착한 증적이 시간 경과에 따라 `INCOMPLETE → DELAYED → MISSING`으로 바뀌고, 나머지 조각이 도착하면 `STORED`가 되는 것을 확인한다.

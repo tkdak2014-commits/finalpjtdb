@@ -128,6 +128,36 @@ class MapTests(unittest.TestCase):
             self.assertEqual(get_db().execute("SELECT COUNT(*) FROM maps").fetchone()[0], 0)
         self.assertEqual(list(Path(self.app.config["MAP_DIR"]).iterdir()), [])
 
+    def test_large_grid_is_stored_and_only_the_image_is_downsampled(self):
+        """실제 크기 지도를 거부하지 않고 화면용 이미지 픽셀만 줄인다."""
+        from app.services import map_service
+        from app.services.map_service import downsample_grid
+
+        width, height = 40, 30
+        payload = self.map_payload(
+            message_id="nav-map-big", width=width, height=height,
+            data=[0] * (width * height - 3) + [100, 100, -1],
+        )
+        app = create_app({**self.config, "MAP_MAX_CELLS": 10_000, "MAP_MAX_IMAGE_SIDE": 10})
+        with app.app_context():
+            outcome, stored = map_service.receive_map(payload)
+            self.assertEqual(outcome, "accepted")
+            # 좌표 변환에 쓰는 크기는 원본 그대로 저장한다.
+            self.assertEqual((stored["width"], stored["height"]), (width, height))
+            image = Path(app.config["MAP_DIR"]) / stored["image_path"]
+            self.assertTrue(image.is_file())
+            # PNG 헤더의 가로·세로는 솎은 크기다.
+            header = image.read_bytes()[16:24]
+            self.assertEqual(
+                (int.from_bytes(header[:4], "big"), int.from_bytes(header[4:], "big")),
+                (10, 8),
+            )
+        data, out_width, out_height = downsample_grid(list(range(12)), 4, 3, 2)
+        self.assertEqual((out_width, out_height), (2, 2))
+        self.assertEqual(data, [0, 2, 8, 10])
+        # 제한보다 작은 격자는 그대로 둔다.
+        self.assertEqual(downsample_grid([1, 2, 3, 4], 2, 2, 10), ([1, 2, 3, 4], 2, 2))
+
     def test_login_map_api_and_image_are_protected(self):
         self.assertEqual(self.client.get("/api/maps/current").location, "/login")
         self.assertEqual(self.client.get("/api/maps/current/image").location, "/login")

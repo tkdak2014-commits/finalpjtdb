@@ -58,6 +58,13 @@ if (eventsPanel) {
         typeCell.appendChild(type);
         addTextCell(row, `${event.robot_name} ${event.robot_id}`);
         addTextCell(row, event.location_label);
+        // [증적 상태] 지연·누락은 주황으로 구분해 조치가 필요한 사건을 놓치지 않게 한다.
+        if (["DELAYED", "MISSING"].includes(event.evidence_state)) {
+            const warning = document.createElement("span");
+            warning.className = `evidence-warning evidence-${event.evidence_state.toLowerCase()}`;
+            warning.textContent = ` 증적 ${event.evidence_state_label}`;
+            timeCell.appendChild(warning);
+        }
         const riskCell = addTextCell(row, "");
         const risk = document.createElement("span");
         risk.className = `risk-badge risk-${event.risk_level.toLowerCase()}`;

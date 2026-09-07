@@ -12,7 +12,7 @@
 {% endblock %}
 {% block content %}
 <div class="history-content">
-    <div class="history-heading"><div><p>HISTORY SEARCH</p><h1>통합 이력 검색</h1><span>이상 이벤트·차량 입출차·로봇 상태·순찰·교대 기록을 조건별로 조회합니다.</span></div><a href="{{ url_for('dashboard.index') }}">{{ icon('grid', 15) }} 관제 화면으로</a></div>
+    <div class="history-heading"><div><p>HISTORY SEARCH</p><h1>통합 이력 검색</h1><span>이상 이벤트·CCTV 상태·순찰 허용 조건·로봇 상태·순찰·교대 기록을 조건별로 조회합니다.</span></div><a href="{{ url_for('dashboard.index') }}">{{ icon('grid', 15) }} 관제 화면으로</a></div>
 
     <section class="filter-panel" aria-labelledby="filter-title">
         <h2 id="filter-title">{{ icon('log', 17) }} 검색 조건</h2>
@@ -36,8 +36,8 @@
         <div class="results-heading"><h2 id="results-title">검색 결과</h2><span>총 <strong>{{ result.total }}</strong>건 · {{ result.page }}/{{ result.pages }}페이지</span></div>
         {% if result.records %}
         <div class="history-table-wrap" tabindex="0" role="region" aria-label="통합 이력 검색 결과">
-            <table class="history-table"><caption class="visually-hidden">시각, 종류, 로봇, 내용, 위험도, 상태, 담당자, 자료</caption>
-                <thead><tr><th>시각</th><th>종류</th><th>로봇</th><th>내용</th><th>위험도</th><th>상태</th><th>담당자</th><th>자료</th></tr></thead>
+            <table class="history-table"><caption class="visually-hidden">시각, 종류, 장치, 내용, 위험도, 상태, 담당자, 자료</caption>
+                <thead><tr><th>시각</th><th>종류</th><th>장치</th><th>내용</th><th>위험도</th><th>상태</th><th>담당자</th><th>자료</th></tr></thead>
                 <tbody>{% for record in result.records %}<tr>
                     <td><time datetime="{{ record.recorded_at }}">{{ record.recorded_label }}</time></td>
                     <td><span class="type-badge type-{{ record.record_type|lower }}">{{ record.record_type_label }}</span></td>

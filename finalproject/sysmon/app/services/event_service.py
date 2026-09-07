@@ -17,8 +17,14 @@ from .robot_service import FRAME_ID_PATTERN, MESSAGE_ID_PATTERN, ROBOT_NAMES
 
 EVENT_ID_PATTERN = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 RISK_LEVELS = {"HIGH", "MEDIUM", "LOW"}
+# [제품 범위] 관제가 이벤트 로그로 남기는 이상은 화재·누수·장애물 세 종류다.
+# 계약 enum에는 LIGHTING·FACILITY_DAMAGE도 있지만 이번 범위에서는 저장하지 않는다.
 EVENT_TYPES = {"FIRE", "LEAK", "OBSTACLE"}
-EVENT_TYPE_LABELS = {"FIRE": "화재", "LEAK": "누수", "OBSTACLE": "장애물"}
+EVENT_TYPE_LABELS = {
+    "FIRE": "화재", "LEAK": "누수", "OBSTACLE": "장애물",
+    # 아래 둘은 더 이상 저장하지 않는다. 범위 축소 전에 저장된 이력을 읽을 때만 사용한다.
+    "LIGHTING": "조명 이상", "FACILITY_DAMAGE": "시설물 파손",
+}
 RISK_LABELS = {"HIGH": "상", "MEDIUM": "중", "LOW": "하"}
 STATUS_LABELS = {
     "NEW": "신규", "REVIEWING": "확인중",
@@ -77,7 +83,9 @@ def validate_event(payload, now=None):
         raise EventValidationError("robot_id는 AMR1 또는 AMR2여야 합니다.")
     event_type = _required_text(payload, "event_type").upper()
     if event_type not in EVENT_TYPES:
-        raise EventValidationError("event_type은 FIRE, LEAK, OBSTACLE 중 하나여야 합니다.")
+        raise EventValidationError(
+            "event_type은 FIRE, LEAK, OBSTACLE 중 하나여야 합니다."
+        )
     risk_level = _required_text(payload, "risk_level").upper()
     if risk_level not in RISK_LEVELS:
         raise EventValidationError("risk_level은 HIGH, MEDIUM, LOW 중 하나여야 합니다.")
@@ -173,6 +181,34 @@ def _display_time(value):
     return _parse_stored_time(value).astimezone(korea).strftime("%m-%d %H:%M:%S")
 
 
+# [증적 상태] 저장값은 INCOMPLETE·STORED·REJECTED 그대로 두고, 조립이 끝나지 않은
+# 시간으로 지연·누락을 나눠 표시한다. 없는 결과를 관제가 만들어 내지 않는다.
+EVIDENCE_STATE_LABELS = {
+    "STORED": "저장 완료", "REJECTED": "거부", "DELAYED": "지연",
+    "MISSING": "누락", "NONE": "없음",
+}
+
+
+def evidence_state(row, now=None):
+    """이벤트 한 건의 증적 상태를 화면 표시용 값으로 계산한다."""
+    status = row.get("evidence_status") if isinstance(row, dict) else None
+    if status in {"STORED", "REJECTED"}:
+        return status
+    if status is None:
+        # ROS 증적을 예고하지 않은 사건은 상태를 만들지 않는다.
+        return "STORED" if row.get("image_path") else "NONE"
+    updated_at = row.get("evidence_updated_at")
+    if not updated_at:
+        return "DELAYED"
+    current = now or datetime.now(timezone.utc)
+    age = (current - _parse_stored_time(updated_at)).total_seconds()
+    if age >= current_app.config["EVIDENCE_MISSING_AFTER_SECONDS"]:
+        return "MISSING"
+    if age >= current_app.config["EVIDENCE_DELAYED_AFTER_SECONDS"]:
+        return "DELAYED"
+    return "INCOMPLETE"
+
+
 def _event_view(row):
     event = dict(row)
     if event["x"] is None or event["y"] is None or not event["frame_id"]:
@@ -191,6 +227,13 @@ def _event_view(row):
         "captured_at": event.get("captured_at"),
         "captured_label": _display_time(event["captured_at"]) if event.get("captured_at") else "—",
         "x": event["x"], "y": event["y"], "frame_id": event["frame_id"],
+        "confidence": event.get("confidence"),
+        "location_valid": bool(event.get("location_valid", 1)),
+        "evidence_id": event.get("evidence_id"),
+        "evidence_state": evidence_state(event),
+        "evidence_state_label": EVIDENCE_STATE_LABELS.get(
+            evidence_state(event), "조립 중"
+        ),
         "location_label": location_label,
         "risk_level": event["risk_level"],
         "risk_label": RISK_LABELS[event["risk_level"]],

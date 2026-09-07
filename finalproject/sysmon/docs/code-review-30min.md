@@ -1,6 +1,6 @@
 # 30분 코드리뷰 진행안
 
-갱신 기준: 2026-09-06, 1~11단계 완료. 현재 시스템은 AMR1·AMR2 상태, Nav2 OccupancyGrid 형태의 지도, 화재·누수·장애물 관제, 네 카메라 최신 영상, 차량 입출차와 통합 이력 검색을 구현했다. 사용자별 표시 초기화는 DB 이력을 삭제하지 않는다. 실제 ROS·TF·costmap·영상 인식 토픽 연결은 아직 예정이다. 시스템 모니터는 운영 명령을 요청하지 않는다.
+갱신 기준: 2026-09-07, 1~20단계 완료. 현재 시스템은 AMR 상태, 정적 지도, 로봇별 costmap, DetectionEvent와 chunk 증적, 이상 이벤트 관제, 네 카메라 영상, 차량 입출차, CCTV 차량 상태·순찰 허용 조건, 관측점 방문·순찰 결과와 Keepout·E-stop 안전 상태, 통합 이력을 구현했다. 활성 입력 25개와 IngestionAck 2개의 별도 프로세스 로컬 DDS 종단시험까지 확인했다. 실제 상대 publisher·TF·PC 간 부하 검증은 아직 예정이다. 시스템 모니터는 운영 명령을 요청하지 않는다.
 
 ## 1. 발표 순서 — 합계 30분
 
@@ -39,28 +39,32 @@
 파일 열기 순서:
 
 1. [run.py](../run.py): create_app 호출과 app.run.
-2. [app/__init__.py](../app/__init__.py): 설정→DB 초기화→인증 등록→페이지 경로 등록.
-3. [routes/dashboard.py](../app/routes/dashboard.py): 로그인 검사 후 HTML 렌더링.
-4. [templates/index.html](../app/templates/index.html): 사용자·권한, 로봇·영상 영역, 이벤트 표와 상세 대화상자.
-5. [dashboard.css](../app/static/css/dashboard.css): 지도·상태·영상의 grid 배치와 좁은 화면 전환을 대표로 보여준다.
-6. [routes/robots.py](../app/routes/robots.py): 장치 POST와 로그인 사용자 GET 경로.
-7. [services/robot_service.py](../app/services/robot_service.py): 외부 값을 내부 상태로 검증·정규화.
-8. [models/robot.py](../app/models/robot.py): 최신·이력 원자적 저장과 중복·순서 판정.
-9. [routes/maps.py](../app/routes/maps.py): 지도 POST·로그인 JSON·PNG GET 경로.
-10. [services/map_service.py](../app/services/map_service.py): 점유 지도 검증·PNG·좌표 변환.
-11. [models/map.py](../app/models/map.py): 지도 이력·현재 지도·최근 좌표 조회.
-12. [map.js](../app/static/js/map.js): 지도·로봇 마커·경로의 2초 갱신.
-13. [routes/events.py](../app/routes/events.py): multipart 이벤트 POST와 보호된 증거 이미지 GET.
-14. [services/event_service.py](../app/services/event_service.py): 화재 필드·시각·이미지 검증과 파일 저장.
-15. [models/event.py](../app/models/event.py): 이벤트·증거 경로 트랜잭션과 중복·충돌 판정.
-16. [events.js](../app/static/js/events.js): 3초 목록 갱신·상세 조회·CSRF 상태 변경.
-17. [routes/cameras.py](../app/routes/cameras.py): 장치 프레임 POST와 로그인 사용자 GET.
-18. [services/camera_service.py](../app/services/camera_service.py): 영상 검증·최신 교체·중복/순서/단절 판정.
-19. [cameras.js](../app/static/js/cameras.js): 1초 상태 조회와 변경 프레임 표시.
-20. [routes/history.py](../app/routes/history.py): 로그인 이력 화면과 JSON API.
-21. [services/history_service.py](../app/services/history_service.py): 검색 검증·한국 날짜 UTC 변환·표시 라벨.
-22. [models/history.py](../app/models/history.py): 다섯 종류 SELECT의 조건 구성·UNION·페이지 조회.
-23. [templates/history.html](../app/templates/history.html): 검색 폼·결과 표·페이지 이동.
+2. [ros_adapter.py](../ros_adapter.py): ROS 의존성 점검과 별도 구독 프로세스 시작.
+3. [app/ros_adapter.py](../app/ros_adapter.py): 토픽 등록→메시지 변환→기존 서비스 callback.
+4. [app/__init__.py](../app/__init__.py): 설정→DB 초기화→인증 등록→페이지 경로 등록.
+5. [routes/dashboard.py](../app/routes/dashboard.py): 로그인 검사 후 HTML 렌더링.
+6. [templates/index.html](../app/templates/index.html): 사용자·권한, 로봇·영상 영역, 이벤트 표와 상세 대화상자.
+7. [dashboard.css](../app/static/css/dashboard.css): 지도·상태·영상의 grid 배치와 좁은 화면 전환을 대표로 보여준다.
+8. [routes/robots.py](../app/routes/robots.py): 장치 POST와 로그인 사용자 GET 경로.
+9. [services/robot_service.py](../app/services/robot_service.py): 외부 값을 내부 상태로 검증·정규화.
+10. [models/robot.py](../app/models/robot.py): 최신·이력 원자적 저장과 중복·순서 판정.
+11. [routes/maps.py](../app/routes/maps.py): 지도 POST·로그인 JSON·PNG GET 경로.
+12. [services/map_service.py](../app/services/map_service.py): 점유 지도 검증·PNG·좌표 변환.
+13. [models/map.py](../app/models/map.py): 지도 이력·현재 지도·최근 좌표 조회.
+14. [map.js](../app/static/js/map.js): 지도·로봇 마커·경로의 2초 갱신.
+15. [costmap_service.py](../app/services/costmap_service.py) → [costmap.py](../app/models/costmap.py) → [costmaps.py](../app/routes/costmaps.py) → [costmaps.js](../app/static/js/costmaps.js): 네 동적 격자의 최신 저장과 분리 표시.
+16. [detection_service.py](../app/services/detection_service.py) → [detection.py](../app/models/detection.py): DetectionEvent와 EvidenceChunk 독립 수신·조립·ACK 흐름.
+17. [routes/events.py](../app/routes/events.py): multipart 이벤트 POST와 보호된 증거 이미지 GET.
+18. [services/event_service.py](../app/services/event_service.py): 이상 사건 필드·시각·이미지 검증과 파일 저장.
+19. [models/event.py](../app/models/event.py): 이벤트·증거 경로 트랜잭션과 중복·충돌 판정.
+20. [events.js](../app/static/js/events.js): 3초 목록 갱신·상세 조회·CSRF 상태 변경.
+21. [routes/cameras.py](../app/routes/cameras.py): 장치 프레임 POST와 로그인 사용자 GET.
+22. [services/camera_service.py](../app/services/camera_service.py): 영상 검증·최신 교체·중복/순서/단절 판정.
+23. [cameras.js](../app/static/js/cameras.js): 1초 상태 조회와 변경 프레임 표시.
+24. [routes/history.py](../app/routes/history.py): 로그인 이력 화면과 JSON API.
+25. [services/history_service.py](../app/services/history_service.py): 검색 검증·한국 날짜 UTC 변환·표시 라벨.
+26. [models/history.py](../app/models/history.py): 다섯 종류 SELECT의 조건 구성·UNION·페이지 조회.
+27. [templates/history.html](../app/templates/history.html): 검색 폼·결과 표·페이지 이동.
 
 “day5에서는 하나의 파일 안에서 앱 생성과 경로를 정의했습니다. 같은 기본 원리를 사용하되 실행·인증·DB·화면을 파일별로 나눴습니다. 이렇게 하면 이벤트 입력이 HTTP에서 ROS로 바뀔 때에도 처리 서비스를 재사용하기 쉽습니다.”
 
@@ -76,11 +80,12 @@
 
 “기존 예제에는 시작할 때 데이터를 삭제하는 코드가 있었습니다. 관제 이력은 재시작 뒤에도 남아야 해서 없는 테이블만 생성합니다. 새 DB 연결마다 외래 키 검사를 켜고, 저장 실패 시 롤백합니다.”
 
-[schema.sql](../app/schema.sql)에서는 13개 테이블을 줄마다 읽지 말고 아래 관계를 보여준다.
+[schema.sql](../app/schema.sql)에서는 모든 테이블을 줄마다 읽지 말고 아래 핵심 관계를 보여준다.
 
 ```text
 robots → 최신 상태 / 상태 이력
 maps → map_latest (현재 표시 지도)
+AMR1·AMR2 × global·local → costmap_latest (source별 최신 격자)
 robots → events → event_evidence (한 장의 경로)
 users + events → event_changes
 robots → commands / patrol_runs / handovers
@@ -126,6 +131,8 @@ robots 1 ── N robot_status_history
 이어 [map_service.py](../app/services/map_service.py)의 `validate_map` → `occupancy_to_png` → `dashboard_map`을 보여준다.
 
 “Nav2 지도는 사진이 아니라 점유 격자입니다. 격자를 PNG로 바꾸고 DB에는 해상도·크기·원점·yaw와 이미지 경로를 저장합니다. 로봇 좌표에서 지도 원점을 빼고 역회전한 뒤 resolution으로 나누며, PNG Y축 방향을 맞추기 위해 높이에서 뺍니다.”
+
+이어 `costmap_service.receive_costmap`과 화면의 **DYNAMIC COSTMAP** 선택 상자를 보여준다. “동적 costmap도 OccupancyGrid 검증·PNG 변환을 재사용하지만 고주기 이력을 쌓지 않고 AMR·global/local별 최신 한 장만 유지합니다. 실제 TF 상호운용 전에는 정적 지도에 임의로 겹치지 않고 별도 미리보기로 제공합니다.”
 
 지도 시연 순서:
 
@@ -197,7 +204,7 @@ Nav2 / 로봇 / 인식 모듈 → ros_adapter → 상태·지도·이벤트 서�
 
 [tests/test_database.py](../tests/test_database.py)에서 재시작 데이터 보존, [tests/test_auth.py](../tests/test_auth.py)에서 세션 분리·권한 변경을 대표로 보여준다.
 
-기록된 현재 검증: 2026-09-06 실제 프로젝트 반영 후 임시 테스트 DB에서 총 55개 통과. 이력 테스트 6개는 로그인 보호, 다섯 기록 종류 통합, 명령 제외, 조건·한국 날짜·검색어 검증과 50건 페이지를 확인했다. 임시 5009번 서버에서 전체 5건과 `화재 이벤트 + 위험도 상` 결과 1건을 확인했다.
+기록된 현재 검증: 2026-09-07 임시 DB에서 전체 테스트 **107개 통과**. ROS를 source하지 않으면 격리 DDS 시험 6개는 skip되고 101개만 실행되므로, 시연 전에 어느 쪽으로 돌린 결과인지 밝힌다. ROS를 source한 전체 실행은 2회 연속 107개 통과를 확인했다. 도메인 86의 별도 프로세스 DDS 시험에서는 활성 입력 21개와 ACK publisher 2개 매칭, DetectionEvent·완성 증적 연결, CameraState 양쪽 카메라 수신과 순찰 허용 조건 변경 이력 저장, 관측점 방문·순찰 결과와 Keepout·E-stop 저장, 처리 실패 0과 관련 API HTTP 200을 확인했다. 실제 상대 publisher와 여러 PC 네트워크는 아직 시험하지 않았다.
 
 ### 29~30분: 현재 한계와 질문
 
@@ -236,8 +243,12 @@ Nav2 / 로봇 / 인식 모듈 → ros_adapter → 상태·지도·이벤트 서�
 | 관리자 버튼만 숨기면 안 되나? | 직접 URL·POST 접근이 가능하므로 서버에서도 권한을 검사해야 한다. |
 | 비밀번호를 복호화해서 비교하나? | 해시는 복호화하지 않는다. 해시 검증 함수로 일치 여부를 판단한다. |
 | 이미지를 받으면 다음 행동을 바로 지시하나? | 시스템 모니터는 이벤트를 관제·기록하며 운영 명령 요청은 별도 로봇·미션 모듈이 담당한다. |
-| 토픽이 나중에 정해져도 되나? | 내부 처리 형식을 먼저 정하고 adapter로 변환한다. 최종 필드 차이는 조정할 수 있다. |
+| 실제 퍼블리셔가 없는데 ROS 연결을 구현했나? | 공용 메시지를 PC 3에서 빌드하고 별도 프로세스의 실제 rclpy로 입력 15개와 ACK 2개를 검증했다. 실제 상대 publisher·PC 간 QoS 상호운용은 NOT_RUN이다. |
+| 이벤트와 증적 순서가 바뀌면 실패하나? | 아니다. event_id·evidence_id로 독립 보관하고 둘이 모두 완성된 시점에 연결한다. 누락 chunk는 INCOMPLETE ACK로 알린다. |
+| chunk 이미지가 DB에 계속 쌓이나? | 조립 중에만 BLOB을 두며 완료·거부 후에는 message_id·index·hash 영수증만 남기고 data를 NULL로 비운다. 완성 이미지는 파일로 저장한다. |
+| costmap을 정적 지도에 바로 겹치지 않은 이유는? | source마다 원점·해상도·범위가 다를 수 있고 TF 실연동이 아직 없어, 잘못된 좌표 합성을 피하고 네 최신 격자를 선택형 미리보기로 분리했다. |
 | WAL이면 동시 쓰기가 무제한인가? | 아니다. 읽기·쓰기 경합을 줄이지만 쓰기는 한 번에 하나다. |
+| 13단계 성능시험은 실제 운영 성능인가? | 아니다. 임시 Flask client와 SQLite로 병목을 미리 측정한 결과다. 실제 PC·ROS 네트워크 성능은 후속 통합시험에서 확인한다. |
 | 테이블이 있으면 기능도 완성인가? | 아니다. 서비스·API·UI·실패 처리를 구현하고 검증해야 기능이 완성된다. |
 | 대시보드의 —는 로봇 고장인가? | 아니다. 4단계는 화면 배치이며 아직 데이터를 받지 않아 값이 없다는 뜻이다. |
 | 주차장 그림은 실제 지도인가? | 아니다. 등록 전 배치 예시라고 표시했다. 실제 지도·좌표는 6단계에서 연결한다. |
@@ -247,7 +258,7 @@ Nav2 / 로봇 / 인식 모듈 → ros_adapter → 상태·지도·이벤트 서�
 | 온라인 값만 받으면 계속 온라인인가? | 마지막 서버 수신 후 기본 15초가 지나면 화면에서 오프라인으로 계산한다. |
 | ROS 토픽으로 바꾸면 전부 다시 짜나? | adapter가 토픽 메시지를 현재 내부 필드로 변환해 service를 호출하므로 검증·DB·화면 흐름은 재사용한다. |
 | Nav2 지도는 이미지 토픽인가? | 보통 `nav_msgs/OccupancyGrid`다. 점유 격자를 서버에서 PNG로 변환한다. |
-| `/map`만 받으면 현재 장애물이 보이나? | 정적 지도만 보인다. 사람·차량 같은 동적 장애물은 costmap 토픽 연결이 필요하다. |
+| `/map`만 받으면 현재 장애물이 보이나? | 정적 지도만 보인다. 현재 구현은 네 costmap 토픽을 별도 미리보기로 표시하며, 실제 TF 검증 전에는 정적 지도와 임의 합성하지 않는다. |
 | frame_id가 odom이면 바로 그리나? | 지도 frame과 다르면 TF 변환 근거가 없으므로 마커를 숨기고 불일치를 표시한다. |
 | 이벤트 이미지는 DB에 넣나? | 이미지 파일은 `instance/evidence`에 두고 DB에는 한 이벤트당 한 경로만 저장한다. |
 | 성공 응답이면 로봇이 다음 행동을 하나? | 아니다. 201은 이벤트와 이미지 수신·기록 완료이며 다음 행동 명령은 별도 모듈의 책임이다. |

@@ -36,9 +36,12 @@ def _same_event(existing, event_record):
 def find_event(event_id):
     return get_db().execute(
         """
-        SELECT e.*, evidence.image_path, evidence.captured_at
+        SELECT e.*, evidence.image_path, evidence.captured_at,
+               ingestion.status AS evidence_status,
+               ingestion.updated_at AS evidence_updated_at
           FROM events AS e
           LEFT JOIN event_evidence AS evidence ON evidence.event_id = e.event_id
+          LEFT JOIN evidence_ingestions AS ingestion ON ingestion.event_id = e.event_id
          WHERE e.event_id = ?
         """,
         (event_id,),
@@ -50,10 +53,13 @@ def list_recent(limit=50, after=None):
     return get_db().execute(
         """
         SELECT e.*, robots.name AS robot_name,
-               evidence.image_path, evidence.captured_at
+               evidence.image_path, evidence.captured_at,
+               ingestion.status AS evidence_status,
+               ingestion.updated_at AS evidence_updated_at
           FROM events AS e
           JOIN robots ON robots.robot_id = e.robot_id
           LEFT JOIN event_evidence AS evidence ON evidence.event_id = e.event_id
+          LEFT JOIN evidence_ingestions AS ingestion ON ingestion.event_id = e.event_id
          WHERE (? IS NULL OR e.received_at > ?)
          ORDER BY e.occurred_at DESC, e.event_id DESC
          LIMIT ?

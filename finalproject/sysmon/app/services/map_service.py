@@ -108,6 +108,25 @@ def occupancy_to_png(occupancy, width, height):
     return signature + _png_chunk(b"IHDR", header) + _png_chunk(b"IDAT", zlib.compress(bytes(rows), 9)) + _png_chunk(b"IEND", b"")
 
 
+def downsample_grid(occupancy, width, height, max_side):
+    """화면용 PNG가 너무 커지지 않게 격자를 일정 간격으로 솎는다.
+
+    좌표 변환에는 원본 해상도·크기를 그대로 사용하고 이미지 픽셀 수만 줄인다.
+    화면은 원본 크기의 viewBox에 이미지를 늘려 그리므로 마커 위치는 달라지지 않는다.
+    """
+    step = 1
+    while -(-width // step) > max_side or -(-height // step) > max_side:
+        step += 1
+    if step == 1:
+        return occupancy, width, height
+    rows = []
+    for y in range(0, height, step):
+        start = y * width
+        # 슬라이스로 한 줄씩 솎아 큰 격자에서도 처리 시간을 짧게 유지한다.
+        rows.extend(occupancy[start:start + width:step])
+    return rows, -(-width // step), -(-height // step)
+
+
 def receive_map(payload, now=None):
     """검증한 지도 이미지를 파일에 기록하고 메타데이터를 DB에 저장한다."""
     current = now or datetime.now(timezone.utc)
@@ -119,7 +138,11 @@ def receive_map(payload, now=None):
     image_path = map_dir / image_name
     created = False
     if not image_path.exists():
-        png = occupancy_to_png(grid["data"], grid["width"], grid["height"])
+        image_data, image_width, image_height = downsample_grid(
+            grid["data"], grid["width"], grid["height"],
+            current_app.config["MAP_MAX_IMAGE_SIDE"],
+        )
+        png = occupancy_to_png(image_data, image_width, image_height)
         # [원자적 파일 저장] 브라우저가 생성 중인 PNG를 읽지 않도록 완성 후 이름을 바꾼다.
         temporary_path = None
         try:
@@ -177,13 +200,26 @@ def dashboard_map(now=None):
                 f'{robot["id"]} 좌표계 {robot["frame_id"]}는 지도 좌표계 {map_data["frame_id"]}와 다릅니다.'
             )
             continue
-        point = _screen_point(robot["x"], robot["y"], map_data)
+        # [위치 유효성] 현재 위치가 무효면 마지막 유효 위치를 다른 표시로 그린다.
+        pose_valid = robot["pose_valid"]
+        x = robot["x"] if pose_valid else robot["last_valid_x"]
+        y = robot["y"] if pose_valid else robot["last_valid_y"]
+        if x is None or y is None:
+            coordinate_warnings.append(f'{robot["id"]} 위치를 확인할 수 없습니다.')
+            continue
+        point = _screen_point(x, y, map_data)
         marker = {
             "id": robot["id"], "name": robot["name"],
             "x": round(point[0], 3), "y": round(point[1], 3),
             "inside_map": _inside_map(point, map_data),
             "connection_status": robot["connection_status"],
+            "pose_valid": pose_valid,
+            "pose_label": robot["id"] if pose_valid else f'{robot["id"]} 마지막 유효',
         }
+        if not pose_valid:
+            coordinate_warnings.append(
+                f'{robot["id"]} 현재 위치가 무효입니다. 마지막 유효 위치를 표시합니다.'
+            )
         markers.append(marker)
         history = map_model.recent_positions(robot["id"], map_data["frame_id"])
         points = []

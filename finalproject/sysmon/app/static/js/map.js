@@ -28,7 +28,9 @@ if (mapPanel) {
     const renderRobot = (robot, mapData) => {
         if (!robot.inside_map) return;
         const group = document.createElementNS(svgNamespace, "g");
-        group.setAttribute("class", `map-robot-marker ${robot.id.toLowerCase()} ${robot.connection_status.toLowerCase()}`);
+        // [위치 유효성] 마지막 유효 위치는 속이 빈 점선 원과 다른 문구로 구분한다.
+        const poseClass = robot.pose_valid === false ? " pose-stale" : "";
+        group.setAttribute("class", `map-robot-marker ${robot.id.toLowerCase()} ${robot.connection_status.toLowerCase()}${poseClass}`);
         group.setAttribute("transform", `translate(${robot.x} ${robot.y})`);
         const radius = Math.max(2.2, Math.min(mapData.width, mapData.height) * 0.025);
         const circle = document.createElementNS(svgNamespace, "circle");
@@ -36,7 +38,7 @@ if (mapPanel) {
         const label = document.createElementNS(svgNamespace, "text");
         label.setAttribute("y", -(radius * 1.5));
         label.setAttribute("font-size", radius * 1.45);
-        label.textContent = robot.id;
+        label.textContent = robot.pose_label || robot.id;
         group.append(circle, label);
         robotsLayer.appendChild(group);
     };

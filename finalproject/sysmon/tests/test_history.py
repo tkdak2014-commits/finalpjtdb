@@ -54,11 +54,26 @@ class HistoryTests(unittest.TestCase):
                 (self.user_id,),
             )
             db.execute(
-                "INSERT INTO patrol_runs(patrol_id,robot_id,status,started_at,ended_at) VALUES ('patrol-001','AMR1','COMPLETED','2026-09-05T04:00:00.000Z','2026-09-05T04:30:00.000Z')"
+                """INSERT INTO patrol_runs(patrol_id,report_id,message_id,robot_id,result,
+                                             started_at,ended_at,planned_visit_count,
+                                             completed_visit_count,received_at)
+                   VALUES ('patrol-001','1f0b1f3c-7c1a-4c4e-8d6a-2f3f6a5c1101',
+                           '1f0b1f3c-7c1a-4c4e-8d6a-2f3f6a5c1102','AMR1','SUCCEEDED',
+                           '2026-09-05T04:00:00.000Z','2026-09-05T04:30:00.000Z',2,2,
+                           '2026-09-05T04:30:01.000Z')"""
             )
             db.executemany(
-                "INSERT INTO patrol_visits(patrol_id,observation_point,visited_at) VALUES ('patrol-001',?,?)",
-                (("P1", "2026-09-05T04:10:00.000Z"), ("P2", "2026-09-05T04:20:00.000Z")),
+                """INSERT INTO patrol_visits(visit_id,message_id,robot_id,patrol_id,waypoint_id,
+                                            result,arrived_at,received_at)
+                   VALUES (?,?,'AMR1','patrol-001',?,'SUCCEEDED',?,?)""",
+                (
+                    ("1f0b1f3c-7c1a-4c4e-8d6a-2f3f6a5c1201",
+                     "1f0b1f3c-7c1a-4c4e-8d6a-2f3f6a5c1202", "P1",
+                     "2026-09-05T04:10:00.000Z", "2026-09-05T04:10:01.000Z"),
+                    ("1f0b1f3c-7c1a-4c4e-8d6a-2f3f6a5c1203",
+                     "1f0b1f3c-7c1a-4c4e-8d6a-2f3f6a5c1204", "P2",
+                     "2026-09-05T04:20:00.000Z", "2026-09-05T04:20:01.000Z"),
+                ),
             )
             db.execute(
                 """INSERT INTO handovers(handover_id,from_robot_id,to_robot_id,reason,status,requested_at,completed_at)
@@ -90,10 +105,12 @@ class HistoryTests(unittest.TestCase):
     def test_all_history_types_are_merged_in_time_order_without_commands(self):
         self.login_session()
         payload = self.client.get("/api/history").get_json()
-        self.assertEqual(payload["total"], 6)
+        # [20단계] 관측점 방문 2건이 순찰 결과와 별도 기록으로 합쳐진다.
+        self.assertEqual(payload["total"], 8)
         self.assertEqual(
             [row["record_type"] for row in payload["records"]],
-            ["VEHICLE_ACCESS", "HANDOVER", "PATROL", "EVENT_CHANGE", "EVENT", "ROBOT_STATUS"],
+            ["VEHICLE_ACCESS", "HANDOVER", "PATROL_VISIT", "PATROL_VISIT", "PATROL",
+             "EVENT_CHANGE", "EVENT", "ROBOT_STATUS"],
         )
         self.assertNotIn("command-excluded", {row["record_id"] for row in payload["records"]})
         event = next(row for row in payload["records"] if row["record_type"] == "EVENT")
@@ -110,8 +127,14 @@ class HistoryTests(unittest.TestCase):
         self.assertEqual(self.client.get("/api/history?status=REVIEWING").get_json()["total"], 2)
         memo = self.client.get("/api/history?keyword=%ED%98%84%EC%9E%A5").get_json()
         self.assertEqual((memo["total"], memo["records"][0]["record_type"]), (1, "EVENT_CHANGE"))
+        # 관측점 이름으로 순찰 결과와 방문 기록을 함께 찾는다.
         point = self.client.get("/api/history?keyword=P2").get_json()
-        self.assertEqual((point["total"], point["records"][0]["record_type"]), (1, "PATROL"))
+        self.assertEqual(point["total"], 2)
+        self.assertEqual(
+            {row["record_type"] for row in point["records"]}, {"PATROL", "PATROL_VISIT"}
+        )
+        visit = self.client.get("/api/history?type=PATROL_VISIT&robot=AMR1").get_json()
+        self.assertEqual((visit["total"], visit["records"][0]["status_label"]), (2, "완료"))
         self.assertEqual(self.client.get("/api/history?keyword=%25").get_json()["total"], 0)
         with self.app.app_context():
             db = get_db()
@@ -124,7 +147,7 @@ class HistoryTests(unittest.TestCase):
     def test_korean_date_range_is_converted_and_inclusive(self):
         self.login_session()
         self.assertEqual(
-            self.client.get("/api/history?from=2026-09-05&to=2026-09-05").get_json()["total"], 6
+            self.client.get("/api/history?from=2026-09-05&to=2026-09-05").get_json()["total"], 8
         )
         self.assertEqual(
             self.client.get("/api/history?from=2026-09-06&to=2026-09-06").get_json()["total"], 0
@@ -169,8 +192,8 @@ class HistoryTests(unittest.TestCase):
         self.login_session()
         first = self.client.get("/api/history").get_json()
         second = self.client.get("/api/history?page=2").get_json()
-        self.assertEqual((first["total"], len(first["records"]), first["pages"]), (57, 50, 2))
-        self.assertEqual((second["page"], len(second["records"])), (2, 7))
+        self.assertEqual((first["total"], len(first["records"]), first["pages"]), (59, 50, 2))
+        self.assertEqual((second["page"], len(second["records"])), (2, 9))
         page = self.client.get("/history?type=EVENT&risk=HIGH").get_data(as_text=True)
         self.assertIn("통합 이력 검색", page)
         self.assertIn("fire-001", page)

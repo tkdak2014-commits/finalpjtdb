@@ -5,6 +5,7 @@ from ..database import get_db
 
 STATUS_COLUMNS = (
     "robot_id", "message_id", "battery", "x", "y", "frame_id",
+    "pose_valid", "last_valid_pose_at",
     "mission_status", "connection_status", "observed_at",
 )
 
@@ -22,7 +23,8 @@ def list_latest():
     return get_db().execute(
         """
         SELECT r.robot_id, r.name, s.message_id, s.battery, s.x, s.y,
-               s.frame_id, s.mission_status, s.connection_status,
+               s.frame_id, s.pose_valid, s.last_valid_pose_at,
+               s.mission_status, s.connection_status,
                s.observed_at, s.received_at
           FROM robots AS r
           LEFT JOIN robot_latest_status AS s ON s.robot_id = r.robot_id
@@ -44,9 +46,9 @@ def store_status(status, received_at):
         # [쓰기 순서 보호] 중복·시각 비교부터 두 테이블 저장까지 다른 쓰기가 끼어들지 않게 한다.
         db.execute("BEGIN IMMEDIATE")
         duplicate = db.execute(
-            "SELECT robot_id, message_id, battery, x, y, frame_id, mission_status, "
-            "connection_status, observed_at, received_at "
-            "FROM robot_status_history WHERE message_id = ?",
+            "SELECT robot_id, message_id, battery, x, y, frame_id, pose_valid, "
+            "last_valid_pose_at, mission_status, connection_status, observed_at, "
+            "received_at FROM robot_status_history WHERE message_id = ?",
             (status["message_id"],),
         ).fetchone()
         if duplicate is not None:
@@ -73,24 +75,28 @@ def store_status(status, received_at):
         db.execute(
             """
             INSERT INTO robot_status_history
-                (robot_id, message_id, battery, x, y, frame_id,
-                 mission_status, connection_status, observed_at, received_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (robot_id, message_id, battery, x, y, frame_id, pose_valid,
+                 last_valid_pose_at, mission_status, connection_status,
+                 observed_at, received_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             values,
         )
         db.execute(
             """
             INSERT INTO robot_latest_status
-                (robot_id, message_id, battery, x, y, frame_id,
-                 mission_status, connection_status, observed_at, received_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (robot_id, message_id, battery, x, y, frame_id, pose_valid,
+                 last_valid_pose_at, mission_status, connection_status,
+                 observed_at, received_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(robot_id) DO UPDATE SET
                 message_id = excluded.message_id,
                 battery = excluded.battery,
                 x = excluded.x,
                 y = excluded.y,
                 frame_id = excluded.frame_id,
+                pose_valid = excluded.pose_valid,
+                last_valid_pose_at = excluded.last_valid_pose_at,
                 mission_status = excluded.mission_status,
                 connection_status = excluded.connection_status,
                 observed_at = excluded.observed_at,
@@ -104,3 +110,17 @@ def store_status(status, received_at):
         # [저장 실패] 최신 상태와 이력이 한쪽만 남지 않도록 전체 저장을 되돌린다.
         db.rollback()
         raise
+
+
+def last_valid_pose(robot_id):
+    """현재 위치가 무효일 때 화면에 함께 보여줄 마지막 유효 위치를 찾는다."""
+    return get_db().execute(
+        """
+        SELECT x, y, frame_id, observed_at
+          FROM robot_status_history
+         WHERE robot_id = ? AND pose_valid = 1 AND x IS NOT NULL AND y IS NOT NULL
+         ORDER BY observed_at DESC
+         LIMIT 1
+        """,
+        (robot_id,),
+    ).fetchone()

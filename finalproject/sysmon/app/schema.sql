@@ -23,6 +23,10 @@ CREATE TABLE IF NOT EXISTS robot_latest_status (
     x REAL,
     y REAL,
     frame_id TEXT,
+    -- [위치 유효성] 로봇이 위치를 잃어도 배터리·임무는 계속 받는다.
+    -- 무효일 때 좌표는 비우고 마지막으로 위치가 유효했던 시각만 남긴다.
+    pose_valid INTEGER NOT NULL DEFAULT 1 CHECK (pose_valid IN (0, 1)),
+    last_valid_pose_at TEXT,
     mission_status TEXT NOT NULL,
     connection_status TEXT NOT NULL CHECK (connection_status IN ('ONLINE', 'OFFLINE', 'UNKNOWN')),
     observed_at TEXT NOT NULL,
@@ -38,6 +42,10 @@ CREATE TABLE IF NOT EXISTS robot_status_history (
     x REAL,
     y REAL,
     frame_id TEXT,
+    -- [위치 유효성] 로봇이 위치를 잃어도 배터리·임무는 계속 받는다.
+    -- 무효일 때 좌표는 비우고 마지막으로 위치가 유효했던 시각만 남긴다.
+    pose_valid INTEGER NOT NULL DEFAULT 1 CHECK (pose_valid IN (0, 1)),
+    last_valid_pose_at TEXT,
     mission_status TEXT NOT NULL,
     connection_status TEXT NOT NULL CHECK (connection_status IN ('ONLINE', 'OFFLINE', 'UNKNOWN')),
     observed_at TEXT NOT NULL,
@@ -67,6 +75,25 @@ CREATE TABLE IF NOT EXISTS map_latest (
     map_id INTEGER NOT NULL UNIQUE REFERENCES maps(id)
 );
 
+-- [17단계: 동적 costmap] 로봇·계층별 최신 격자만 유지해 고주기 토픽의 무제한 누적을 막는다.
+CREATE TABLE IF NOT EXISTS costmap_latest (
+    robot_id TEXT NOT NULL CHECK (robot_id IN ('AMR1', 'AMR2')),
+    layer TEXT NOT NULL CHECK (layer IN ('global', 'local')),
+    message_id TEXT NOT NULL,
+    frame_id TEXT NOT NULL,
+    resolution REAL NOT NULL CHECK (resolution > 0),
+    width INTEGER NOT NULL CHECK (width > 0),
+    height INTEGER NOT NULL CHECK (height > 0),
+    origin_x REAL NOT NULL,
+    origin_y REAL NOT NULL,
+    origin_yaw REAL NOT NULL,
+    content_hash TEXT NOT NULL,
+    image_path TEXT NOT NULL,
+    observed_at TEXT NOT NULL,
+    received_at TEXT NOT NULL,
+    PRIMARY KEY (robot_id, layer)
+);
+
 -- [이벤트] message_id 중복 저장을 막고 위험도와 관제 처리 상태를 별도 필드로 관리한다.
 CREATE TABLE IF NOT EXISTS events (
     event_id TEXT PRIMARY KEY NOT NULL,
@@ -77,6 +104,9 @@ CREATE TABLE IF NOT EXISTS events (
     x REAL,
     y REAL,
     frame_id TEXT,
+    confidence REAL CHECK (confidence IS NULL OR (confidence BETWEEN 0 AND 1)),
+    location_valid INTEGER NOT NULL DEFAULT 1 CHECK (location_valid IN (0, 1)),
+    evidence_id TEXT,
     risk_level TEXT NOT NULL CHECK (risk_level IN ('HIGH', 'MEDIUM', 'LOW')),
     status TEXT NOT NULL DEFAULT 'NEW'
         CHECK (status IN ('NEW', 'REVIEWING', 'WORK_REQUESTED', 'RESOLVED')),
@@ -87,9 +117,45 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE TABLE IF NOT EXISTS event_evidence (
     id INTEGER PRIMARY KEY,
     event_id TEXT NOT NULL UNIQUE REFERENCES events(event_id),
+    evidence_id TEXT,
     image_path TEXT NOT NULL,
     captured_at TEXT,
     created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- [18단계: Detection 재전송] 보완 메시지로 events 최신값이 바뀌어도 모든 message_id 판정을 보존한다.
+CREATE TABLE IF NOT EXISTS detection_event_messages (
+    message_id TEXT PRIMARY KEY NOT NULL,
+    event_id TEXT NOT NULL REFERENCES events(event_id),
+    content_hash TEXT NOT NULL,
+    received_at TEXT NOT NULL
+);
+
+-- [18단계: 증적 조립] 이벤트보다 먼저 온 증적도 보관하고 완료·거부 상태를 재시작 뒤 유지한다.
+CREATE TABLE IF NOT EXISTS evidence_ingestions (
+    evidence_id TEXT PRIMARY KEY NOT NULL,
+    event_id TEXT NOT NULL,
+    robot_id TEXT NOT NULL CHECK (robot_id IN ('AMR1', 'AMR2')),
+    captured_at TEXT NOT NULL,
+    media_type TEXT NOT NULL CHECK (media_type IN ('image/jpeg', 'image/png')),
+    sha256 TEXT NOT NULL,
+    total_size INTEGER NOT NULL CHECK (total_size > 0),
+    chunk_count INTEGER NOT NULL CHECK (chunk_count > 0),
+    status TEXT NOT NULL CHECK (status IN ('INCOMPLETE', 'STORED', 'REJECTED')),
+    image_path TEXT,
+    received_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
+
+-- 완료 전에는 data를 두고 완료·거부 뒤에는 NULL로 비워 message_id·index 영수증만 유지한다.
+CREATE TABLE IF NOT EXISTS evidence_chunks (
+    evidence_id TEXT NOT NULL REFERENCES evidence_ingestions(evidence_id) ON DELETE CASCADE,
+    chunk_index INTEGER NOT NULL,
+    message_id TEXT NOT NULL UNIQUE,
+    content_hash TEXT NOT NULL,
+    data BLOB,
+    received_at TEXT NOT NULL,
+    PRIMARY KEY (evidence_id, chunk_index)
 );
 
 -- [관제 이력] 사용자 확인·메모·상태 변경을 기록한다. 상태 전이 규칙은 후속 서비스에서 검사한다.
@@ -111,6 +177,30 @@ CREATE TABLE IF NOT EXISTS vehicle_access_logs (
     direction TEXT NOT NULL CHECK (direction IN ('ENTRY', 'EXIT')),
     detected_at TEXT NOT NULL,
     received_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
+);
+
+-- [19단계: CCTV 확정 상태] PC 4가 만든 CameraState를 원문 식별자와 함께 보존한다.
+CREATE TABLE IF NOT EXISTS cctv_state_events (
+    event_id TEXT PRIMARY KEY NOT NULL,
+    camera_id TEXT NOT NULL CHECK (camera_id IN ('gate_cam', 'center_cam')),
+    state TEXT NOT NULL CHECK (state IN ('ENTERING', 'PARKED', 'EXITING', 'EXITED')),
+    confidence REAL NOT NULL CHECK (confidence BETWEEN 0 AND 1),
+    observed_at TEXT NOT NULL,
+    received_at TEXT NOT NULL
+);
+
+-- [19단계: 순찰 허용 최신값] 2 Hz 반복 수신은 한 행의 수신 시각만 갱신한다.
+CREATE TABLE IF NOT EXISTS patrol_permit_latest (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    allowed INTEGER NOT NULL CHECK (allowed IN (0, 1)),
+    received_at TEXT NOT NULL
+);
+
+-- permit 값이 실제로 바뀐 시점만 남겨 반복 heartbeat의 무제한 누적을 막는다.
+CREATE TABLE IF NOT EXISTS patrol_permit_history (
+    id INTEGER PRIMARY KEY,
+    allowed INTEGER NOT NULL CHECK (allowed IN (0, 1)),
+    received_at TEXT NOT NULL
 );
 
 -- [대시보드 표시 기준] DB 이력을 삭제하지 않고 사용자별 최근 목록 시작 시각만 저장한다.
@@ -138,20 +228,87 @@ CREATE TABLE IF NOT EXISTS commands (
 );
 
 -- [순찰] 순찰 실행 단위와 각 관측점 방문 기록을 분리한다.
+-- [20단계: 순찰 결과] PatrolReport 한 건이 순찰 실행 한 행이다.
+-- 보고가 오지 않은 순찰은 저장하지 않고 화면에서 UNREPORTED로 계산한다. 관제는 결과를 대필하지 않는다.
 CREATE TABLE IF NOT EXISTS patrol_runs (
     patrol_id TEXT PRIMARY KEY NOT NULL,
+    report_id TEXT NOT NULL,
+    message_id TEXT NOT NULL UNIQUE,
     robot_id TEXT NOT NULL REFERENCES robots(robot_id),
-    command_id TEXT REFERENCES commands(command_id),
-    status TEXT NOT NULL CHECK (status IN ('RUNNING', 'PAUSED', 'COMPLETED', 'FAILED', 'CANCELLED')),
+    mission_id TEXT NOT NULL DEFAULT '',
+    command_id TEXT NOT NULL DEFAULT '',
+    result TEXT NOT NULL CHECK (result IN ('SUCCEEDED', 'FAILED', 'CANCELED')),
+    reason_code INTEGER NOT NULL DEFAULT 0,
+    reason TEXT NOT NULL DEFAULT '',
     started_at TEXT NOT NULL,
-    ended_at TEXT
+    ended_at TEXT,
+    planned_visit_count INTEGER NOT NULL CHECK (planned_visit_count >= 0),
+    completed_visit_count INTEGER NOT NULL CHECK (completed_visit_count >= 0),
+    received_at TEXT NOT NULL
 );
+
+-- [20단계: 관측점 방문] PatrolVisit은 보고보다 먼저 올 수 있어 순찰 실행 행을 요구하지 않는다.
 CREATE TABLE IF NOT EXISTS patrol_visits (
+    visit_id TEXT PRIMARY KEY NOT NULL,
+    message_id TEXT NOT NULL UNIQUE,
+    robot_id TEXT NOT NULL REFERENCES robots(robot_id),
+    patrol_id TEXT NOT NULL DEFAULT '',
+    mission_id TEXT NOT NULL DEFAULT '',
+    command_id TEXT NOT NULL DEFAULT '',
+    waypoint_id TEXT NOT NULL,
+    x REAL,
+    y REAL,
+    frame_id TEXT,
+    result TEXT NOT NULL CHECK (result IN ('SUCCEEDED', 'SKIPPED', 'FAILED')),
+    reason_code INTEGER NOT NULL DEFAULT 0,
+    reason TEXT NOT NULL DEFAULT '',
+    arrived_at TEXT NOT NULL,
+    completed_at TEXT,
+    received_at TEXT NOT NULL
+);
+
+-- [20단계: Keepout] 로봇별 최신 적용 상태만 유지한다. 롤백 실패는 화면에서 경고로 구분한다.
+CREATE TABLE IF NOT EXISTS keepout_latest (
+    robot_id TEXT PRIMARY KEY NOT NULL REFERENCES robots(robot_id),
+    message_id TEXT NOT NULL,
+    transaction_id TEXT NOT NULL DEFAULT '',
+    state TEXT NOT NULL CHECK (state IN ('UNKNOWN', 'DISABLED', 'APPLIED', 'ROLLED_BACK', 'ROLLBACK_FAILED')),
+    global_enabled INTEGER NOT NULL CHECK (global_enabled IN (0, 1)),
+    local_enabled INTEGER NOT NULL CHECK (local_enabled IN (0, 1)),
+    reason_code INTEGER NOT NULL DEFAULT 0,
+    detail TEXT NOT NULL DEFAULT '',
+    observed_at TEXT NOT NULL,
+    received_at TEXT NOT NULL
+);
+
+-- [20단계: E-stop 최신] Safety Arbiter가 보낸 마지막 상태 한 행이다.
+CREATE TABLE IF NOT EXISTS estop_latest (
+    singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+    estop_id TEXT NOT NULL,
+    message_id TEXT NOT NULL,
+    active INTEGER NOT NULL CHECK (active IN (0, 1)),
+    reason_code INTEGER NOT NULL DEFAULT 0,
+    reason TEXT NOT NULL DEFAULT '',
+    manual_reset_required INTEGER NOT NULL CHECK (manual_reset_required IN (0, 1)),
+    source_id TEXT NOT NULL DEFAULT '',
+    sequence INTEGER NOT NULL,
+    observed_at TEXT NOT NULL,
+    received_at TEXT NOT NULL
+);
+
+-- [20단계: E-stop 이력] 2 Hz 반복 수신은 최신 행만 갱신하고 활성·해제가 바뀐 시점만 남긴다.
+CREATE TABLE IF NOT EXISTS estop_history (
     id INTEGER PRIMARY KEY,
-    patrol_id TEXT NOT NULL REFERENCES patrol_runs(patrol_id),
-    observation_point TEXT NOT NULL CHECK (observation_point IN ('P1', 'P2', 'P3', 'P4', 'P5', 'P6', 'P7')),
-    visited_at TEXT NOT NULL,
-    event_id TEXT REFERENCES events(event_id)
+    message_id TEXT NOT NULL UNIQUE,
+    estop_id TEXT NOT NULL,
+    active INTEGER NOT NULL CHECK (active IN (0, 1)),
+    reason_code INTEGER NOT NULL DEFAULT 0,
+    reason TEXT NOT NULL DEFAULT '',
+    manual_reset_required INTEGER NOT NULL CHECK (manual_reset_required IN (0, 1)),
+    source_id TEXT NOT NULL DEFAULT '',
+    sequence INTEGER NOT NULL,
+    observed_at TEXT NOT NULL,
+    received_at TEXT NOT NULL
 );
 
 -- [교대] 교대 전후 로봇과 요청·완료 시각을 보존한다.
@@ -171,13 +328,21 @@ CREATE INDEX IF NOT EXISTS idx_events_occurred ON events(occurred_at);
 CREATE INDEX IF NOT EXISTS idx_events_robot_time ON events(robot_id, occurred_at);
 CREATE INDEX IF NOT EXISTS idx_status_robot_time ON robot_status_history(robot_id, observed_at);
 CREATE INDEX IF NOT EXISTS idx_maps_observed ON maps(observed_at);
+CREATE INDEX IF NOT EXISTS idx_costmap_observed ON costmap_latest(observed_at);
 CREATE INDEX IF NOT EXISTS idx_event_changes_time ON event_changes(event_id, changed_at);
 CREATE INDEX IF NOT EXISTS idx_event_changes_changed_at ON event_changes(changed_at);
+CREATE INDEX IF NOT EXISTS idx_detection_messages_event ON detection_event_messages(event_id);
+CREATE INDEX IF NOT EXISTS idx_evidence_ingestions_event ON evidence_ingestions(event_id);
 CREATE INDEX IF NOT EXISTS idx_commands_robot_time ON commands(robot_id, requested_at);
 CREATE INDEX IF NOT EXISTS idx_patrol_robot_time ON patrol_runs(robot_id, started_at);
-CREATE INDEX IF NOT EXISTS idx_visits_patrol ON patrol_visits(patrol_id, visited_at);
+CREATE INDEX IF NOT EXISTS idx_visits_patrol ON patrol_visits(patrol_id, arrived_at);
+CREATE INDEX IF NOT EXISTS idx_visits_robot_time ON patrol_visits(robot_id, arrived_at);
+CREATE INDEX IF NOT EXISTS idx_estop_history_time ON estop_history(observed_at);
 CREATE INDEX IF NOT EXISTS idx_handovers_time ON handovers(requested_at);
 CREATE INDEX IF NOT EXISTS idx_handovers_from_time ON handovers(from_robot_id, requested_at);
 CREATE INDEX IF NOT EXISTS idx_handovers_to_time ON handovers(to_robot_id, requested_at);
 CREATE INDEX IF NOT EXISTS idx_vehicle_access_detected ON vehicle_access_logs(detected_at);
 CREATE INDEX IF NOT EXISTS idx_vehicle_access_camera_time ON vehicle_access_logs(camera_id, detected_at);
+CREATE INDEX IF NOT EXISTS idx_cctv_state_observed ON cctv_state_events(observed_at);
+CREATE INDEX IF NOT EXISTS idx_cctv_state_camera_time ON cctv_state_events(camera_id, observed_at);
+CREATE INDEX IF NOT EXISTS idx_patrol_permit_time ON patrol_permit_history(received_at);

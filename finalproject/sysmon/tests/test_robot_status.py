@@ -140,6 +140,31 @@ class RobotStatusTests(unittest.TestCase):
         self.assertIn("순찰 중", page)
         self.assertIn("map (12.40, 8.70)", page)
 
+    def test_invalid_pose_keeps_status_and_shows_last_valid_position(self):
+        """위치를 잃어도 배터리·임무는 계속 받고 화면은 마지막 유효 위치를 구분해 보여준다."""
+        with self.app.app_context():
+            robot_service.receive_status(self.payload(
+                message_id="pose-valid-1", x=12.0, y=8.0, seconds_ago=20,
+            ))
+            robot_service.receive_status(self.payload(
+                message_id="pose-invalid-1", pose_valid=False, x=None, y=None,
+                seconds_ago=5,
+                last_valid_pose_at=(
+                    datetime.now(timezone.utc) - timedelta(seconds=20)
+                ).isoformat(),
+            ))
+            row = get_db().execute(
+                "SELECT battery, x, y, pose_valid FROM robot_latest_status WHERE robot_id='AMR1'"
+            ).fetchone()
+            cards = robot_service.dashboard_robots()
+        self.assertEqual((row["x"], row["y"], row["pose_valid"]), (None, None, 0))
+        self.assertIsNotNone(row["battery"])
+        card = next(item for item in cards if item["id"] == "AMR1")
+        self.assertFalse(card["pose_valid"])
+        self.assertEqual((card["last_valid_x"], card["last_valid_y"]), (12.0, 8.0))
+        self.assertIn("마지막 유효", card["location_label"])
+        self.assertEqual(card["mission_label"], "순찰 중")
+
     def test_connection_becomes_offline_when_updates_stop(self):
         now = datetime.now(timezone.utc)
         with self.app.app_context():

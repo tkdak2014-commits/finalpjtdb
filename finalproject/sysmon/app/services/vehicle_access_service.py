@@ -2,12 +2,17 @@
 
 from datetime import datetime, timedelta, timezone
 
+from ..models import cctv as cctv_model
 from ..models import vehicle_access as vehicle_access_model
 from .event_service import EVENT_ID_PATTERN
 
 
 CAMERA_NAMES = {"webcam1": "고정 웹캠 1", "webcam2": "고정 웹캠 2"}
 DIRECTIONS = {"ENTRY": "입차", "EXIT": "출차"}
+# [주차장 안 상태] 센터 CCTV의 주차 완료·출차 중은 게이트 통과가 아니라 별도 표로 보존한다.
+# 같은 차량이 입출차로 두 번 세어지지 않도록 목록을 만들 때만 합쳐서 보여준다.
+CENTER_STATES = {"PARKED": "주차 완료", "EXITING": "출차 중"}
+CENTER_CAMERA_NAME = "센터 CCTV"
 
 
 class VehicleAccessValidationError(ValueError):
@@ -83,5 +88,25 @@ def _view(row):
     }
 
 
+def _center_view(row):
+    """센터 CCTV 상태를 입출차 목록과 같은 열 구조로 바꾼다."""
+    item = dict(row)
+    return {
+        "access_id": item["event_id"], "message_id": item["event_id"],
+        "camera_id": "center_cam", "camera_name": CENTER_CAMERA_NAME,
+        "direction": item["state"], "direction_label": CENTER_STATES[item["state"]],
+        "detected_at": item["observed_at"],
+        "detected_label": _display_time(item["observed_at"]),
+    }
+
+
 def recent_accesses(limit=50, after=None):
-    return [_view(row) for row in vehicle_access_model.list_recent(limit, after)]
+    """게이트 통과 기록과 센터 주차·출차 상태를 시간순으로 합쳐 돌려준다."""
+    items = [_view(row) for row in vehicle_access_model.list_recent(limit, after)]
+    items.extend(
+        _center_view(row)
+        for row in cctv_model.list_center_states(limit, after)
+        if row["state"] in CENTER_STATES
+    )
+    items.sort(key=lambda item: item["detected_at"], reverse=True)
+    return items[:limit]

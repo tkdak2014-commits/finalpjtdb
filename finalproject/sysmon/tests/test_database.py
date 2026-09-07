@@ -30,8 +30,11 @@ class DatabaseTests(unittest.TestCase):
     def test_first_start_creates_empty_tables_and_folders(self):
         self.assertTrue(Path(self.config["DATABASE"]).is_file())
         self.assertTrue(Path(self.config["EVIDENCE_DIR"]).is_dir())
-        expected = {"users", "robots", "robot_latest_status", "robot_status_history", "maps", "map_latest",
-                    "events", "event_evidence", "event_changes", "vehicle_access_logs",
+        expected = {"users", "robots", "robot_latest_status", "robot_status_history", "maps", "map_latest", "costmap_latest",
+                    "events", "event_evidence", "event_changes", "detection_event_messages",
+                    "evidence_ingestions", "evidence_chunks", "vehicle_access_logs",
+                    "cctv_state_events", "patrol_permit_latest", "patrol_permit_history",
+            "keepout_latest", "estop_latest", "estop_history",
                     "dashboard_clear_state",
                     "commands", "patrol_runs", "patrol_visits", "handovers"}
         with self.app.app_context():
@@ -42,7 +45,10 @@ class DatabaseTests(unittest.TestCase):
                 self.assertEqual(db.execute(f"SELECT COUNT(*) FROM {table}").fetchone()[0], 0)
             self.assertEqual(db.execute("PRAGMA journal_mode").fetchone()[0], "wal")
             self.assertEqual(db.execute("PRAGMA integrity_check").fetchone()[0], "ok")
+            event_columns = {row[1] for row in db.execute("PRAGMA table_info(events)")}
+            self.assertTrue({"confidence", "location_valid", "evidence_id"} <= event_columns)
         self.assertTrue((Path(self.config["DATABASE"]).parent / "maps").is_dir())
+        self.assertTrue((Path(self.config["DATABASE"]).parent / "costmaps").is_dir())
         # [3단계 반영] DB 준비 후 기본 페이지는 로그인 사용자에게만 열린다.
         self.assertEqual(self.app.test_client().get("/").status_code, 302)
         self.assertEqual(self.app.test_client().get("/login").status_code, 200)

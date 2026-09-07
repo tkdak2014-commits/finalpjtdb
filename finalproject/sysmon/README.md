@@ -1,8 +1,8 @@
 # 지하주차장 시스템 모니터
 
-## 11단계 완료 범위
+## 20단계까지 완료 범위
 
-Flask 기본 구조, SQLite 초기화, 인증·권한, 대시보드, AMR1·AMR2 상태, Nav2 점유 지도, 화재·누수·장애물 이벤트, 네 카메라 최신 영상, 차량 입출차 로그와 통합 이력 검색을 구현했다. 최근 두 로그는 사용자별로 표시 초기화할 수 있고 DB 이력은 유지한다. 실제 ROS 토픽과 costmap 동적 장애물은 후속 단계다.
+Flask 기본 구조, SQLite 초기화, 인증·권한, 대시보드, AMR1·AMR2 상태, Nav2 점유 지도, 이상 이벤트, 네 카메라 최신 영상, 차량 입출차 로그와 통합 이력 검색을 구현했다. 12~17단계에서 ROS adapter, 부하 측정, 계약 메시지, 별도 프로세스 가상 DDS와 네 costmap을 연결했다. 18단계는 두 AMR의 `DetectionEvent`·`EvidenceChunk`를 활성화하고, 순서가 뒤바뀐 chunk 재조립·크기/SHA-256/이미지 검증·사건 연결과 `IngestionAck` 회신까지 구현했다. 19단계는 CCTV `CameraState`와 순찰 허용 조건 Bool을 수신해 상태 카드·통합 이력에 연결하고, 반복 수신 중 값이 바뀐 시점만 이력에 남긴다. 20단계는 관측점 방문·순찰 결과와 Keepout·E-stop을 받아 순찰 진행과 안전 상태를 표시하고, 결과 보고가 없는 순찰은 대필하지 않고 UNREPORTED로 구분한다. 실제 상대 PC publisher와 PC 간 통합은 아직 실행하지 않았다.
 
 `../day5/0_app.py`의 Flask 생성·경로 등록·템플릿 표시 방식을 기반으로 실행 파일과 페이지 경로를 분리했다. 기능 처리 위치에 한국어 주석을 작성한다.
 
@@ -15,12 +15,11 @@ Flask 기본 구조, SQLite 초기화, 인증·권한, 대시보드, AMR1·AMR2 
 ## 실행
 
 ```bash
-cd /home/hun/finalproject/sysmon
+cd /home/hun/finalpjtdb/finalproject/sysmon
 python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-flask --app run create-admin
-python run.py
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m flask --app run create-admin
+.venv/bin/python run.py
 ```
 
 브라우저에서 http://127.0.0.1:5000 에 접속한다. 종료는 터미널에서 Ctrl+C.
@@ -30,17 +29,41 @@ python run.py
 이미 만들어 둔 가상환경을 사용한다면 다음 명령으로 관리자 계정을 생성할 수 있다.
 
 ```bash
-cd /home/hun/finalproject/sysmon
-.venv/bin/flask --app run create-admin
+cd /home/hun/finalpjtdb/finalproject/sysmon
+.venv/bin/python -m flask --app run create-admin
 .venv/bin/python run.py
 ```
 
 이전 서버가 실행 중이면 해당 터미널에서 Ctrl+C로 종료하고 재실행한다. 로그인 성공 후 상단의 **사용자 관리**에서 추가 계정을 만든다. 기본 아이디·비밀번호는 자동 생성하지 않는다.
 
+## 코드리뷰에서 볼 폴더
+
+제품 코드와 시험용 코드를 폴더로 나눴다. 리뷰 대상은 위 두 줄이다.
+
+| 폴더 | 내용 | 리뷰 대상 |
+| --- | --- | --- |
+| `run.py`, `ros_adapter.py`, `app/` | 실제 서비스가 실행하는 코드 | **예** |
+| `app/routes` · `services` · `models` · `ros` · `templates` · `static` | 기능별 처리·저장·화면 | **예** |
+| `testkit/` | 가상 ROS publisher, 격리 DDS 종단시험, 부하 측정 하네스 | 아니오 |
+| `tests/` | 단위·요청·격리 시험 | 아니오 |
+| `tools/` | 시연·시험 실행 CLI와 환경 설정 스크립트 | 아니오 |
+| `docs/` | 구현 기록·코드리뷰 진행안 | 참고 |
+
+`testkit/`과 `tools/`는 실제 로봇 없이 화면과 저장을 확인하려고 만든 것이다. 제품 코드는 이들을 import하지 않는다.
+
 ## 파일 구성
 
 - `run.py`: 로컬 서버 실행
+- `ros_adapter.py`: 웹 서버와 별도 프로세스로 ROS 구독 실행·의존성 점검
 - `app/__init__.py`: 앱 생성과 기능별 경로 등록
+- `app/ros_adapter.py`: ROS adapter 공개 진입점(이름 모음)
+- `app/ros/registry.py`: 구독 토픽 등록표와 계약 enum 대응표
+- `app/ros/payloads.py`: ROS 메시지를 서비스 입력으로 바꾸는 변환 함수
+- `app/ros/qos.py`: interfaces.md 5절 QoS 계약
+- `app/ros/node.py`: 구독 노드 생성·callback·IngestionAck 회신·실행
+- `testkit/ros_topic_test.py`: 격리 도메인의 가상 publisher와 실제 subscriber·임시 저장소 종단시험
+- `testkit/ros_process_test.py`: adapter·가상 publisher 별도 프로세스 DDS 종단시험
+- `testkit/load_test.py`: 임시 앱의 병렬 입력·조회, SQLite lock, 측정값 집계
 - `app/database.py`: 요청별 SQLite 연결·초기화·연결 종료
 - `app/schema.sql`: 필수 테이블·제약 조건·조회 인덱스
 - `app/security.py`: 세션 서명 키·로그인/권한 검사·CSRF 검증
@@ -55,9 +78,14 @@ cd /home/hun/finalproject/sysmon
 - `app/routes/maps.py`: 점유 지도 임시 수신·현재 지도 JSON·보호된 PNG 조회 API
 - `app/services/map_service.py`: OccupancyGrid 검증·PNG 변환·좌표/경로 변환
 - `app/models/map.py`: 지도 이력·현재 지도·최근 로봇 위치 DB 조회
+- `app/routes/costmaps.py`: 네 costmap의 로그인 목록·보호된 최신 PNG 조회 API
+- `app/services/costmap_service.py`: costmap source·격자 검증, PNG 변환과 최신 교체
+- `app/models/costmap.py`: 로봇·계층별 최신 costmap 원자 교체와 순서 검사
 - `app/routes/events.py`: 이상 이벤트 multipart 수신·로그인 사용자용 증거 이미지 조회
 - `app/services/event_service.py`: 화재·누수·장애물 필드·시각·이미지 검증과 원자적 저장
 - `app/models/event.py`: 이벤트·증거 경로 원자적 저장과 재전송·충돌 판정
+- `app/services/detection_service.py`: Detection 계약 검증, chunk 재조립·무결성 확인·완성 파일 저장
+- `app/models/detection.py`: 보완 이벤트 message_id, 미완료 증적·chunk 영수증·사건 연결 저장
 - `app/routes/vehicle_access.py`: 고정 웹캠 입차·출차 내역 수신·목록 API
 - `app/services/vehicle_access_service.py`: 입출차 토픽 메타데이터 검증과 표시값 변환
 - `app/models/vehicle_access.py`: 입출차 기록의 중복·충돌 판정과 SQLite 저장
@@ -74,12 +102,17 @@ cd /home/hun/finalproject/sysmon
 - `app/static/css/history.css`: 통합 이력 검색 폼·결과 표·반응형 스타일
 - `app/static/js/dashboard.js`: 한국 시간 표시와 2초 간격 로봇 상태 갱신
 - `app/static/js/map.js`: 2초 간격 지도·로봇 마커·최근 경로 갱신
+- `app/static/js/costmaps.js`: 2초 간격 네 costmap 상태 조회와 선택 미리보기
 - `app/static/js/events.js`: 3초 간격 이벤트 목록·상세·처리 상태 갱신
 - `app/static/js/cameras.js`: 1초 간격 영상 상태 조회와 변경된 최신 프레임 교체
 - `tools/send_demo_map.py`: 실제 Nav2 연결 전 수동 지도 시연 도구
 - `tools/send_demo_event.py`: 실제 이벤트 토픽 연결 전 화재·누수·장애물 시연 도구
 - `tools/send_demo_vehicle_access.py`: 실제 차량 인식 연결 전 입차·출차 시연 도구
 - `tools/send_demo_video.py`: 실제 영상 토픽 연결 전 네 카메라 움직임 시연 도구
+- `tools/run_load_test.py`: 13단계 부하·동시접속·SQLite 경합 측정 CLI
+- `tools/run_ros_topic_test.py`: 15단계 가상 ROS 토픽 종단시험 CLI
+- `tools/publish_virtual_ros_topics.py`: 상대 publisher 없이 계약 토픽을 발행하는 별도 프로세스 CLI
+- `tools/run_ros_process_test.py`: 16~18단계 별도 프로세스 DDS 종단시험 CLI
 - `app/static/css/style.css`: 기본 스타일
 - `app/services/`: 후속 기능 처리 로직
 - `app/models/`: 후속 데이터 접근 코드
@@ -104,7 +137,157 @@ cd /home/hun/finalproject/sysmon
 - [x] 9단계: 로봇·고정 웹캠 최신 영상 수신·표시·연결 중단 감지
 - [x] 10단계: 사건·처리·로봇 상태·순찰·교대 통합 이력 검색
 - [x] 11단계: 누수·장애물 이벤트와 고정 웹캠 차량 입출차 로그
-- [ ] 12단계 이후: 실제 ROS adapter·전체 통합 검증
+- [x] 12단계: ROS adapter 기본 틀·RobotStatus·정적 지도·네 압축 영상 변환
+- [x] 13단계: 실제 퍼블리셔 전 부하·다중 접속·SQLite 경합 측정 도구와 로컬 검증
+- [x] 14단계: 공용 `parking_interfaces` v1.0 구현·PC 3 빌드·import·의존성 점검
+- [x] 15단계: 가상 publisher 7개 토픽의 로컬 DDS·임시 DB·화면 API 종단검증
+- [x] 16단계: adapter·가상 publisher 별도 프로세스 실행과 7개 토픽 종단검증
+- [x] 17단계: AMR1·AMR2 global/local costmap 4개 수신·최신 저장·API·분리 표시
+- [x] 18단계: DetectionEvent·EvidenceChunk 독립 수신·재조립·저장·IngestionAck 회신
+- [x] 19단계: CCTV CameraState·순찰 허용 조건 수신·저장·표시와 통합 이력 연결
+- [x] 20단계: PatrolVisit·PatrolReport·KeepoutStatus·EStopState 수신·저장·표시와 통합 이력 연결
+- [ ] 21단계 이후: PC 1·2·3·4 통합시험, 실부하·장시간 운용·최종 판정
+
+## 12단계 ROS adapter 기본 틀
+
+ROS adapter는 Flask 웹 서버와 분리된 프로세스로 실행한다. 토픽명과 타입은 `app/ros_adapter.py`의 등록표에 모아 두었고, callback은 기존 상태·지도·영상 서비스를 호출하므로 검증·DB·화면 로직을 다시 만들지 않는다.
+
+```bash
+cd /home/hun/finalpjtdb/finalproject/sysmon
+source /opt/ros/jazzy/setup.bash
+source /home/hun/rokey_ws/install/setup.bash
+.venv/bin/python ros_adapter.py --check
+.venv/bin/python ros_adapter.py
+```
+
+현재 가상환경에는 `PyYAML`·`numpy`를 설치했고 PC 3 ROS workspace에는 `parking_interfaces` v1.0을 빌드했다. workspace source 후 `--check`는 `rclpy`, `parking_interfaces`, `nav_msgs`, `sensor_msgs`를 모두 찾아 종료 코드 0을 반환한다. 실제 AMR·비전 publisher 수신은 아직 실행하지 않았다.
+
+현재 활성 입력은 RobotStatus 2개, `/map`, 압축 영상 4개, costmap 4개, DetectionEvent 2개, EvidenceChunk 2개로 총 15개다. 저장 결과는 로봇별 `ingestion_ack` 2개 토픽으로 회신한다. CameraState·patrol_allowed는 같은 등록표에 후속 항목으로만 두었으며 아직 구독하거나 저장하지 않는다. `pose_valid=false`와 유효하지 않은 battery SOC는 현재 DB가 의미를 보존할 수 없어 migration 전에는 저장하지 않는다.
+
+## 13단계 부하·다중 접속·SQLite 경합 검증
+
+상태: **측정 도구 구현·로컬 검증 완료 · 최종 성능 PASS 기준 TBD**
+
+### 목적과 경계
+
+실제 ROS publisher를 받기 전에 현재 HTTP 입력과 대시보드 API를 사용해 PC 3 sysmon 자체의 처리 한계와 SQLite 읽기·쓰기 경합을 측정한다. 시험은 임시 DB와 임시 이미지 폴더에서만 실행하며 실제 `instance/sysmon.sqlite3`와 기존 증적·지도·영상 파일은 변경하지 않는다.
+
+공용 `parking_interfaces`, AMR·비전 코드, 실제 ROS 송수신, 네트워크·장비 성능은 이 단계 범위가 아니다. 이 단계의 결과를 실제 ROS 통합 성능으로 보고하지 않는다.
+
+### 시험 도구
+
+- `tools/run_load_test.py`: 시험 데이터 준비, 병렬 입력·조회, 결과 집계
+- 실행 인자로 시험 시간, 브라우저 역할의 동시 조회자 수, 상태·이벤트·영상 입력률을 조정
+- 고정된 임시 계정·토큰을 소스에 넣지 않고 시험 실행 시 전달
+- 결과에 실행 시각, 코드 버전, 데이터 건수, 설정값과 오류를 함께 기록
+- 중단 또는 실패 시 임시 서버·파일을 정리하고 실제 운영 데이터를 건드리지 않음
+
+기본 측정 예시:
+
+```bash
+cd /home/hun/finalpjtdb/finalproject/sysmon
+.venv/bin/python tools/run_load_test.py \
+  --duration 3 --readers 4 --read-hz 3 \
+  --status-hz 4 --map-hz 1 --camera-hz 20 \
+  --event-hz 1 --vehicle-hz 1 --seed-history 1000 \
+  --output /tmp/sysmon-stage13-baseline.json
+```
+
+SQLite 5초 timeout과 해제 후 복구를 확인하려면 운영 DB가 아닌 이 도구의 임시 DB에서만 다음처럼 lock을 주입한다.
+
+```bash
+.venv/bin/python tools/run_load_test.py \
+  --duration 0.4 --readers 1 --status-hz 10 \
+  --map-hz 0 --camera-hz 0 --event-hz 0 --vehicle-hz 0 \
+  --seed-history 10 --lock-seconds 5.2 \
+  --output /tmp/sysmon-stage13-lock.json
+```
+
+### 시험 시나리오
+
+| ID | 부하 조건 | 확인 항목 |
+|---|---|---|
+| LT-13-01 | 다량 이력이 있는 DB에서 통합 이력 조회 | 조회 지연, 페이지 결과·정렬 정확성 |
+| LT-13-02 | 여러 로그인 사용자의 대시보드 동시 조회 | 응답 지연, 인증 분리, 4xx·5xx 비율 |
+| LT-13-03 | AMR 상태 2개와 지도 입력 중 조회 반복 | 최신 상태 정확성, SQLite lock·누락 여부 |
+| LT-13-04 | 네 영상 갱신과 화면 조회 동시 수행 | 최신 파일 원자 교체, 손상·순서 역전 여부 |
+| LT-13-05 | 이벤트·차량 입출차와 조회 동시 수행 | 중복·충돌 판정, 이력 건수·연결 무결성 |
+| LT-13-06 | 의도적인 장기 write lock과 복구 | 5초 timeout, 503 구분, 이후 정상 복구 |
+| LT-13-07 | 서버 재시작 후 같은 시험 재개 | 기존 임시 데이터 보존, 최신 상태 재조회 |
+
+### 측정값과 완료 조건
+
+- 요청 종류별 성공·실패·timeout 수와 응답시간 p50·p95·p99
+- SQLite lock 및 저장 오류 수, 입력 요청 수와 실제 저장 건수
+- CPU·메모리, DB·증적·지도·최신 영상 폴더 크기
+- 중간 파일 노출, 손상 이미지, 잘못된 최신 상태, 사용자 세션 혼선 여부
+- 동일 설정을 다시 실행할 수 있는 명령과 결과 파일 보존
+
+처리량·응답시간의 최종 합격 수치는 아직 확정하지 않는다. 실제 동시 사용자 수와 보존 데이터 규모는 [TBD-MON-001·003](../docs/monitoring_and_data.md#tbd) 결정 후 PASS 기준으로 고정한다. 그 전 실행 결과는 수치 측정과 병목 확인에 사용하고 임의로 전체 성능 PASS를 선언하지 않는다.
+
+2026-09-07 기본 로컬 측정은 이력 1,000건, 조회자 4명, 상태 총 4 Hz, 지도 1 Hz, 영상 총 20 Hz, 이벤트·입출차 각 1 Hz로 3초간 실행했다. 상태 12건, 지도 3건, 영상 59건, 이벤트 3건, 입출차 3건과 조회 36건이 모두 HTTP 200·201이었고 예외는 없었다. 대시보드 조회 p95는 54.355 ms, 통합 이력 조회 p95는 31.552 ms였다. DB integrity는 `ok`, 외래 키 오류와 잔여 임시 파일은 0이었으며 시험 저장소는 종료 후 삭제됐다.
+
+5.2초 write lock 측정에서는 상태 요청 한 건이 5.016초 후 HTTP 503으로 구분됐고, lock 해제 후 자동 probe는 HTTP 201로 저장됐다. 복구 뒤 DB integrity와 외래 키도 정상이었다. 두 결과는 현재 PC의 임시 Flask client 측정값이며 실제 네트워크·ROS publisher 성능 PASS 결과가 아니다.
+
+## 14단계 공용 메시지 패키지
+
+계약 v1.0의 공용 메시지 14개는 [parking_interfaces](../parking_interfaces/README.md)에 구현했다. PC 3 `/home/hun/rokey_ws`에서 빌드하고 source한 뒤 모든 메시지 import와 adapter `--check` 통과를 확인했다. AMR·비전 workspace 적용 상태는 [CR-001](../docs/change_requests/CR-001_09-07_11-09_parking_interfaces_v1_구현.md)에서 추적한다.
+
+## 15단계 가상 ROS 토픽 종단시험
+
+상대 개발 단위의 publisher가 없어도 실제 `rclpy` publisher와 subscriber 사이의 DDS 전달을 시험할 수 있도록 격리형 도구를 추가했다. 도구는 운영 도메인 6을 거부하고 지정한 별도 도메인과 localhost discovery만 사용한다. Flask 앱·SQLite·지도·최신 영상·ROS 로그는 모두 임시 폴더에 만들고 종료 후 삭제한다.
+
+```bash
+cd /home/hun/finalpjtdb/finalproject/sysmon
+source /opt/ros/jazzy/setup.bash
+source /home/hun/rokey_ws/install/setup.bash
+.venv/bin/python tools/run_ros_topic_test.py \
+  --duration 3 --domain-id 79 \
+  --status-hz 4 --map-hz 1 --image-hz 2 \
+  --output /tmp/sysmon-stage15-local-dds.json
+```
+
+가상 publisher는 RobotStatus 2개, `/map`, 압축 영상 4개를 계약 타입과 QoS로 발행한다. 실제 생성된 `RobotStatus`의 `PoseWithCovariance.pose.position` 경로를 사용하도록 adapter 변환을 바로잡았고, callback의 accepted·duplicate·rejected·failed 수를 구분해 집계한다.
+
+2026-09-07 로컬 측정은 도메인 79에서 3초간 실행했다. RobotStatus 26건과 지도 4건이 저장됐고 네 카메라 모두 최신 프레임을 보유했다. 영상은 discovery 전에 발행된 첫 묶음을 제외한 24건이 처리됐으며 이는 VOLATILE 최신 영상 QoS의 정상 범위다. 처리 실패·거부 0건, DB integrity `ok`, 외래 키 오류 0, 대시보드 상태·지도·카메라 API 모두 HTTP 200, 임시 저장소 삭제를 확인했다.
+
+이 결과는 PC 3 내부의 `LOCAL_VIRTUAL_DDS` PASS다. 실제 PC 1·2·4 publisher, Discovery Server, 네트워크와 실제 발행 주기·데이터·QoS 상호운용은 **NOT_RUN**이다.
+
+## 16단계 별도 프로세스 가상 publisher
+
+웹/ROS adapter가 상대 publisher 프로세스와 분리되는 실제 실행 경계를 확인하기 위해 adapter와 가상 publisher를 서로 다른 OS 프로세스로 실행한다. 두 프로세스는 격리 DDS 도메인과 임시 저장소만 사용하고 종료 코드를 함께 보고한다. 도메인 82의 3초 시험에서 기존 7개 토픽 모두 subscriber 1개와 매칭됐고 자식 프로세스 종료 코드 0, 처리 실패 0, DB·파일·화면 API 무결성을 확인했다. 실제 상대 publisher는 **NOT_RUN**이다.
+
+## 17단계 로봇별 costmap
+
+`interfaces.md` v1.0에 확정된 네 `nav_msgs/msg/OccupancyGrid` 토픽을 RELIABLE·VOLATILE·KEEP_LAST(1) QoS로 구독한다. 고주기 격자를 이력으로 무제한 누적하지 않고 `costmap_latest`에 AMR1·AMR2의 global/local 최신 네 행만 유지하며, PNG도 source별 최신 한 장으로 교체한다. 화면에서는 정적 `/map`과 합성하지 않고 선택형 동적 미리보기로 분리해 좌표·해상도 차이를 숨기지 않는다.
+
+```bash
+cd /home/hun/finalpjtdb/finalproject/sysmon
+source /opt/ros/jazzy/setup.bash
+source /home/hun/rokey_ws/install/setup.bash
+.venv/bin/python tools/run_ros_process_test.py \
+  --duration 3 --domain-id 83 \
+  --status-hz 8 --map-hz 2 --image-hz 5 --costmap-hz 5 \
+  --output /tmp/sysmon-stage17-costmap-dds.json
+```
+
+2026-09-07 도메인 83 시험에서 활성 11개 토픽이 모두 subscriber 1개와 매칭됐다. costmap 4개 토픽을 각각 15건 발행했고 총 44건이 accepted되어 네 source 최신값이 저장됐다. 자식 프로세스 종료 코드 0, callback 실패·거부 0, DB integrity `ok`, 외래 키 오류 0, 상태·지도·카메라·costmap API HTTP 200, 임시 저장소 삭제를 확인했다. 실제 AMR Nav2 publisher, PC 간 Discovery·네트워크·실제 frame·주기·QoS 상호운용은 **NOT_RUN**이다.
+
+## 18단계 DetectionEvent·EvidenceChunk
+
+두 로봇의 DetectionEvent와 EvidenceChunk는 RELIABLE·VOLATILE·KEEP_LAST(20) QoS로 구독한다. `location_valid=false`이면 pose의 숫자를 화면 좌표로 사용하지 않으며, 조명 이상과 시설물 파손 enum도 기존 이벤트 화면 흐름으로 연결한다. 증적은 최대 5 MiB, chunk당 최대 64 KiB로 제한하고 event와 evidence 중 어느 쪽이 먼저 와도 받는다. 모든 chunk가 모이면 전체 크기, SHA-256, 실제 PNG/JPEG 형식을 확인해 원자적으로 저장하고 완료 뒤 DB의 chunk BLOB은 비운다.
+
+```bash
+cd /home/hun/finalpjtdb/finalproject/sysmon
+source /opt/ros/jazzy/setup.bash
+source /home/hun/rokey_ws/install/setup.bash
+.venv/bin/python tools/run_ros_process_test.py \
+  --duration 3 --domain-id 84 \
+  --status-hz 8 --map-hz 2 --image-hz 5 --costmap-hz 5 \
+  --detection-hz 2 --output /tmp/sysmon-stage18-detection-dds.json
+```
+
+가상 publisher는 로봇별로 두 chunk를 역순으로 보내고 그 사이에 DetectionEvent를 발행한다. adapter는 사건과 완성 증적을 결합하고 각 입력에 STORED·DUPLICATE·INCOMPLETE·REJECTED 중 해당 `IngestionAck`를 회신한다. 도메인 84 시험에서 입력 15개와 ACK 2개가 모두 매칭됐고 이벤트·증적 12쌍 저장, 미완료 0, 완료 후 chunk BLOB 0, callback 실패·거부 0, 관련 API HTTP 200을 확인했다. 실제 AMR publisher와 PC 간 시험은 **NOT_RUN**이다.
 
 ## DB 초기화 흐름
 
@@ -113,11 +296,12 @@ cd /home/hun/finalproject/sysmon
 - DB 파일: `instance/sysmon.sqlite3`
 - 증거 이미지 폴더: `instance/evidence/` (유효한 이벤트를 받을 때 PNG/JPEG 한 장 생성)
 - 지도 이미지 폴더: `instance/maps/` (유효한 점유 지도를 받을 때 PNG 생성)
+- costmap 이미지 폴더: `instance/costmaps/` (로봇·계층별 최신 PNG 한 장만 유지)
 - 최신 영상 폴더: `instance/live_frames/` (카메라별 프레임 한 장과 메타데이터만 덮어쓰기)
 - 사용자·로봇·샘플 이벤트는 자동 입력하지 않는다. 관리자 계정은 `create-admin` 명령으로 생성한다.
 - 서버를 재실행해도 저장 데이터와 증거 파일을 삭제하지 않는다.
 - 요청별 연결을 사용하고 요청 종료 시 닫는다. 후속 서비스는 `with get_db() as db:` 등으로 저장 단위의 커밋·실패 시 롤백을 수행해야 한다.
-- WAL과 5초 잠금 대기는 동시 접근 경합을 줄이지만 여러 쓰기를 동시에 실행하지는 않는다. 잠금 시간 초과 등의 API 오류 처리는 후속 서비스 단계에서 추가한다.
+- WAL과 5초 잠금 대기는 동시 접근 경합을 줄이지만 여러 쓰기를 동시에 실행하지는 않는다. 잠금 시간 초과는 503으로 반환하며 발신 측 재시도가 필요하다.
 - DB 초기화에 실패하면 오류를 기록하고 서버 시작을 중단한다.
 - DB 기본 생성 시각은 UTC ISO 형식이다. 외부 발생 시각도 서비스 단계에서 같은 형식으로 검증·변환하고, 화면에서 한국 시간으로 표시한다.
 - `CREATE TABLE IF NOT EXISTS`는 기존 테이블 구조를 변경하지 않는다. 향후 스키마 변경 시 별도 마이그레이션을 추가해야 한다.
@@ -132,6 +316,9 @@ cd /home/hun/finalproject/sysmon
 | map_latest | 현재 표시할 지도 한 건 |
 | events | 이벤트·감지 로봇·좌표·위험도·처리 상태 |
 | event_evidence | 이벤트당 한 장의 증거 이미지 경로 |
+| detection_event_messages | DetectionEvent message_id별 수신 영수증·payload hash |
+| evidence_ingestions | evidence_id별 조립·완료·거부 상태와 파일 메타데이터 |
+| evidence_chunks | chunk message_id·index·hash 영수증과 조립 중 임시 바이트 |
 | event_changes | 사용자·메모·처리 상태 변경 |
 | vehicle_access_logs | 고정 웹캠의 입차·출차 구분과 발생 시각 |
 | dashboard_clear_state | 사용자별 이벤트·입출차 최근 목록 표시 시작 시각 |
@@ -140,12 +327,12 @@ cd /home/hun/finalproject/sysmon
 | patrol_visits | 관측점 방문 이력 |
 | handovers | 로봇 교대 이력 |
 
-이벤트 위험도 `HIGH/MEDIUM/LOW`는 화면의 상/중/하에 대응한다. 처리 상태 `NEW/REVIEWING/WORK_REQUESTED/RESOLVED`는 신규/확인중/작업요청/조치완료에 대응한다. 실제 상태 전이와 이미지 저장은 후속 기능에서 구현한다.
+이벤트 위험도 `HIGH/MEDIUM/LOW`는 화면의 상/중/하에 대응한다. 처리 상태 `NEW/REVIEWING/WORK_REQUESTED/RESOLVED`는 신규/확인중/작업요청/조치완료에 대응한다. 상태 전이는 권한·순서 검사를 거쳐 감사 이력에 저장하고, 증거 이미지는 검증 완료 후 파일로 보존한다.
 
 ## 2단계 검증
 
 ```bash
-cd /home/hun/finalproject/sysmon
+cd /home/hun/finalpjtdb/finalproject/sysmon
 .venv/bin/python -m unittest discover -s tests -v
 ```
 
@@ -196,7 +383,7 @@ cd /home/hun/finalproject/sysmon
 서버를 실행하기 전에 로봇 입력 전용 토큰을 환경변수로 설정한다. 값은 로봇·adapter와 서버에만 두며 HTML이나 JavaScript에 넣지 않는다.
 
 ```bash
-cd /home/hun/finalproject/sysmon
+cd /home/hun/finalpjtdb/finalproject/sysmon
 export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 .venv/bin/python run.py
 ```
@@ -252,7 +439,7 @@ curl -X POST http://127.0.0.1:5000/api/robots/status \
 실제 지도가 없을 때는 다음 수동 시연 도구로 임시 지도를 한 건 전송할 수 있다. 서버와 명령을 실행하는 터미널에 동일한 환경변수가 있어야 한다.
 
 ```bash
-cd /home/hun/finalproject/sysmon
+cd /home/hun/finalpjtdb/finalproject/sysmon
 export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 .venv/bin/python tools/send_demo_map.py
 ```
@@ -280,7 +467,7 @@ export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 실제 이벤트 토픽 없이 수동 시연하려면 서버와 시연 터미널에 같은 ASCII 토큰을 설정한다.
 
 ```bash
-cd /home/hun/finalproject/sysmon
+cd /home/hun/finalpjtdb/finalproject/sysmon
 export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 .venv/bin/python tools/send_demo_event.py --robot AMR1 --risk HIGH
 ```
@@ -319,7 +506,7 @@ export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 서버를 실행한 상태에서 네 영역을 30초 동안 시험하는 명령은 다음과 같다. 생성되는 움직이는 격자 이미지는 실제 카메라 영상이 아니다.
 
 ```bash
-cd /home/hun/finalproject/sysmon
+cd /home/hun/finalpjtdb/finalproject/sysmon
 export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 .venv/bin/python tools/send_demo_video.py
 ```

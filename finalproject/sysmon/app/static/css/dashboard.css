@@ -50,6 +50,15 @@
 .map-viewport { position: relative; flex: 1; min-height: 390px; margin: 14px 14px 0; border: 1px solid #26394e; border-radius: 5px; overflow: hidden; background-color: #0b1724; background-image: linear-gradient(#21334644 1px, transparent 1px), linear-gradient(90deg, #21334644 1px, transparent 1px); background-size: 22px 22px; }
 .map-corner-label { position: absolute; z-index: 2; top: 12px; left: 12px; color: #92a8be; font-size: 9px; letter-spacing: 1px; }
 .map-corner-label span { color: #536880; margin: 0 4px; }
+.costmap-preview { position: absolute; z-index: 3; right: 10px; bottom: 10px; width: 148px; box-sizing: border-box; padding: 8px; border: 1px solid #34516d; border-radius: 6px; background: #091522e8; box-shadow: 0 5px 18px #0007; }
+.costmap-preview > div { display: flex; justify-content: space-between; gap: 5px; color: #8fc6ff; font-size: 7px; letter-spacing: .6px; }
+.costmap-preview > div span { color: #8ea3b9; letter-spacing: 0; }
+.costmap-preview select { width: 100%; margin: 6px 0; padding: 3px 5px; border: 1px solid #314b65; border-radius: 3px; background: #112338; color: #c4d7e9; font-size: 9px; }
+.costmap-preview img { display: block; width: 100%; height: 78px; object-fit: contain; image-rendering: pixelated; border: 1px solid #293e54; background: #0a131e; }
+.costmap-preview img[hidden] { display: none; }
+.costmap-preview p { display: grid; min-height: 78px; place-items: center; box-sizing: border-box; border: 1px dashed #2d4359; color: #71879e; font-size: 9px; }
+.costmap-preview p[hidden] { display: none; }
+.costmap-preview small { display: block; margin-top: 5px; overflow: hidden; color: #8298af; font-size: 7px; text-overflow: ellipsis; white-space: nowrap; }
 .map-canvas { position: absolute; inset: 36px 12px 28px; width: calc(100% - 24px); height: calc(100% - 64px); background: #172331; border: 1px solid #30455a; }
 .map-canvas image { image-rendering: pixelated; }
 .map-path { fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; opacity: .8; vector-effect: non-scaling-stroke; }
@@ -155,8 +164,10 @@
 .dashboard-content { padding: 18px 18px 12px; }
 .page-heading { margin-bottom: 14px; }
 .page-heading .heading-description { margin-top: 5px !important; }
-.status-strip { display: grid; grid-template-columns: minmax(185px, .52fr) minmax(0, 2fr); gap: 12px; margin-bottom: 12px; }
-.status-strip .robot-grid { gap: 12px; }
+/* [20단계 배치] 위 줄은 AMR 카드 두 장, 아래 줄은 시스템 상태와 순찰·안전 카드다. */
+.status-strip { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.status-strip .robot-grid { grid-column: 1 / -1; order: -1; gap: 12px; }
+.status-strip .system-summary-card dl { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .system-summary-card { display: flex; flex-direction: column; justify-content: center; padding: 12px 14px; }
 .system-summary-heading { display: flex; align-items: center; gap: 10px; }
 .system-summary-heading > span { display: grid; width: 34px; height: 34px; place-items: center; border: 1px solid #315374; border-radius: 7px; background: #17304a; color: #74d4ad; }
@@ -165,6 +176,12 @@
 .system-summary-card dl { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 11px 0 0; padding-top: 9px; border-top: 1px solid var(--line); }
 .system-summary-card dt { color: #8398af; font-size: 9px; }
 .system-summary-card dd { overflow: hidden; margin: 4px 0 0; color: #b8c8da; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.system-summary-card .cctv-latest-row { grid-column: 1 / -1; }
+.permit-state { font-weight: 600; }
+.permit-allowed { color: #74d4ad !important; }
+.permit-blocked { color: #f0c56c !important; }
+.permit-stale { color: #ff8d82 !important; }
+.permit-waiting { color: #91a4ba !important; }
 .status-strip .robot-card { padding: 10px 12px; }
 .status-strip .robot-icon { padding: 4px; }
 .status-strip .battery-row { margin: 9px 0 8px; }
@@ -242,6 +259,7 @@
 @media (max-width: 1000px) {
     .dashboard-content { padding: 16px; }
     .status-strip { grid-template-columns: minmax(0, 1fr); }
+    .status-strip .system-summary-card dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     .operations-grid { grid-template-columns: minmax(0, 1fr); }
     .operations-grid .map-panel { min-height: 430px; }
     .recent-log-column { grid-column: auto; }
@@ -254,3 +272,59 @@
     .recent-log-column { height: auto; grid-template-columns: minmax(0, 1fr); grid-template-rows: 290px 230px auto; }
     .recent-log-column .history-shortcut { grid-column: auto; }
 }
+
+/* [20단계: 순찰과 안전] 미수신·정상·비상정지·Keepout 경고를 색으로 구분한다. */
+.estop-state.estop-clear { color: #74d4ad; }
+.estop-state.estop-active { color: #ff8f8f; }
+.estop-state.estop-wait { color: #9db0c4; }
+.keepout-state.keepout-warning { color: #ffb020; font-weight: 600; }
+
+/* [한 화면 밀도] 상태 줄과 제목을 줄여 지도·영상·로그가 스크롤 없이 들어가게 한다. */
+.page-heading { margin-bottom: 10px; }
+.dashboard-page h1 { font-size: 22px; }
+.page-heading .heading-description { margin-top: 3px !important; font-size: 11px; }
+.status-strip { gap: 10px; margin-bottom: 10px; }
+.status-strip .robot-grid { gap: 10px; }
+.status-strip .robot-card { padding: 8px 11px; }
+.status-strip .battery-row { margin: 6px 0 5px; }
+.status-strip .battery-row strong { font-size: 19px; }
+.status-strip .robot-details { padding-top: 6px; }
+.status-strip .robot-details dd { margin-top: 3px; }
+.system-summary-card { padding: 9px 12px; }
+.system-summary-heading > span { width: 28px; height: 28px; }
+.system-summary-heading strong { margin-top: 2px; font-size: 12px; }
+.system-summary-card dl { gap: 6px; margin: 8px 0 0; padding-top: 7px; }
+.system-summary-card dd { margin-top: 3px; }
+.operations-grid { height: 540px; }
+
+/* 항목을 한 줄에 모아 상태 줄 높이를 더 줄인다. */
+.dashboard-content { padding: 14px 18px 10px; }
+.operations-grid { height: 505px; }
+@media (max-width: 1400px) {
+    .status-strip .system-summary-card dl { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* [상태 줄 압축] 요약 항목을 한 줄에 모으고 여백을 줄여 영상 영역에 높이를 넘긴다. */
+.status-strip .system-summary-card .cctv-latest-row { grid-column: auto; }
+.status-strip .robot-card { padding: 7px 10px; }
+.status-strip .robot-heading h2 { font-size: 12px; }
+.status-strip .battery-row { margin: 5px 0 4px; }
+.status-strip .battery-row strong { font-size: 17px; }
+.status-strip .battery-outline { width: 46px; height: 13px; }
+.status-strip .robot-details { padding-top: 5px; }
+.status-strip .robot-details dt { font-size: 8px; }
+.status-strip .robot-details dd { margin-top: 2px; font-size: 10px; }
+.status-strip .system-summary-card { padding: 7px 11px; }
+.status-strip .system-summary-heading > span { width: 24px; height: 24px; }
+.status-strip .system-summary-heading strong { margin-top: 1px; font-size: 11px; }
+.status-strip .system-summary-card dl { gap: 5px; margin: 6px 0 0; padding-top: 6px; }
+.status-strip .system-summary-card dd { margin-top: 2px; font-size: 9px; }
+.operations-grid { height: 568px; }
+
+/* [위치 유효성] 마지막 유효 위치는 속을 비우고 점선으로 그려 현재 위치와 구분한다. */
+.map-robot-marker.pose-stale circle { fill: transparent; stroke-dasharray: 3 2; }
+.map-robot-marker.pose-stale text { fill: #ffb020; }
+
+/* [증적 상태] 조립이 끝나지 않은 증적은 주황으로 구분한다. */
+.evidence-warning { color: #ffb020; font-size: 9px; }
+.evidence-warning.evidence-missing { font-weight: 600; }
