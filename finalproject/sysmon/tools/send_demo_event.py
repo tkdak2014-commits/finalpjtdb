@@ -76,7 +76,7 @@ def main():
         token.encode("ascii")
     except UnicodeEncodeError as exc:
         raise SystemExit(
-            "SYSMON_ROBOT_API_KEY는 영문·숫자·기호로 설정하세요. 예: sysmon-demo-key-2026"
+            "SYSMON_ROBOT_API_KEY는 영문·숫자·기호로 설정하세요. 서버와 같은 값을 사용합니다."
         ) from exc
     now = datetime.now(timezone.utc)
     unique = now.strftime("%Y%m%d%H%M%S%f")

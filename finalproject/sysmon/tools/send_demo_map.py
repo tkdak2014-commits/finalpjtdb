@@ -47,7 +47,7 @@ def main():
         # [HTTP 헤더 검증] 한글 토큰이 urllib 내부 오류로 이어지기 전에 사용법을 안내한다.
         raise SystemExit(
             "SYSMON_ROBOT_API_KEY는 영문·숫자·기호로 설정하세요. "
-            "예: sysmon-demo-key-2026"
+            "서버와 같은 값을 사용합니다."
         ) from exc
     # [화면 확인] 현재 대시보드의 세로형 지도 패널에서 전체 지도가 잘 보이는 비율을 사용한다.
     width, height = 48, 64

@@ -384,7 +384,7 @@ cd /home/hun/finalpjtdb/finalproject/sysmon
 
 ```bash
 cd /home/hun/finalpjtdb/finalproject/sysmon
-export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
+export SYSMON_ROBOT_API_KEY='<시연용 토큰>'
 .venv/bin/python run.py
 ```
 
@@ -403,7 +403,7 @@ export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 ```bash
 curl -X POST http://127.0.0.1:5000/api/robots/status \
   -H 'Content-Type: application/json' \
-  -H 'X-Robot-Token: sysmon-demo-key-2026' \
+  -H "X-Robot-Token: $SYSMON_ROBOT_API_KEY" \
   -d '{
     "message_id": "amr1-status-0001",
     "robot_id": "AMR1",
@@ -440,7 +440,7 @@ curl -X POST http://127.0.0.1:5000/api/robots/status \
 
 ```bash
 cd /home/hun/finalpjtdb/finalproject/sysmon
-export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
+export SYSMON_ROBOT_API_KEY='<시연용 토큰>'
 .venv/bin/python tools/send_demo_map.py
 ```
 
@@ -468,7 +468,7 @@ export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 
 ```bash
 cd /home/hun/finalpjtdb/finalproject/sysmon
-export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
+export SYSMON_ROBOT_API_KEY='<시연용 토큰>'
 .venv/bin/python tools/send_demo_event.py --robot AMR1 --risk HIGH
 ```
 
@@ -507,7 +507,7 @@ export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
 
 ```bash
 cd /home/hun/finalpjtdb/finalproject/sysmon
-export SYSMON_ROBOT_API_KEY='sysmon-demo-key-2026'
+export SYSMON_ROBOT_API_KEY='<시연용 토큰>'
 .venv/bin/python tools/send_demo_video.py
 ```
 
